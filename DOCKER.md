@@ -6,9 +6,65 @@ This guide will help you self-host Timeful using Docker Compose.
 
 - Docker (version 20.10 or later)
 - Docker Compose (version 2.0 or later)
-- A Google Cloud account (for OAuth and Calendar integration)
+- A Google Cloud account (for OAuth and Calendar integration - optional)
 
-## Quick Start
+## Deployment Options
+
+Timeful can be deployed in two ways:
+
+1. **Using Pre-built Images from GitHub Container Registry** (Recommended) - Faster, no build required
+2. **Building from Source** - For development or customization
+
+## Quick Start with Pre-built Images
+
+### 1. Pull Pre-built Images
+
+The easiest and fastest way to deploy Timeful:
+
+```bash
+# Download the pre-built images
+docker pull ghcr.io/lillenne/timeful.app/backend:latest
+docker pull ghcr.io/lillenne/timeful.app/frontend:latest
+
+# Clone the repository (only for configuration files)
+git clone https://github.com/schej-it/timeful.app.git
+cd timeful.app
+```
+
+### 2. Configure Environment
+
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit .env and set at minimum:
+# ENCRYPTION_KEY=$(openssl rand -base64 32)
+nano .env
+```
+
+### 3. Start with Pre-built Images
+
+```bash
+# Use the GHCR compose file
+docker compose -f docker-compose.ghcr.yml up -d
+
+# Or use the Makefile
+make up-ghcr
+```
+
+The application will be available at http://localhost:3002
+
+### 4. Update to Latest Version
+
+```bash
+# Pull latest images
+docker compose -f docker-compose.ghcr.yml pull
+
+# Restart services
+docker compose -f docker-compose.ghcr.yml up -d
+```
+
+## Quick Start - Building from Source
 
 ### 1. Clone the Repository
 
@@ -168,6 +224,71 @@ To enable premium features with payments:
 
 ```env
 STRIPE_API_KEY=sk_live_your_stripe_key
+```
+
+## Docker Images
+
+### Pre-built Images on GitHub Container Registry
+
+Docker images are automatically built and published to GitHub Container Registry (GHCR) on every push to the `main` branch:
+
+- **Backend**: `ghcr.io/lillenne/timeful.app/backend:latest`
+- **Frontend**: `ghcr.io/lillenne/timeful.app/frontend:latest`
+
+**Benefits of using pre-built images:**
+- ✅ No build time - start immediately
+- ✅ Automatically updated with latest changes
+- ✅ Multi-platform support (amd64 and arm64)
+- ✅ Smaller download size (layers cached)
+- ✅ No need to clone the entire repository
+
+**Available tags:**
+- `latest` - Latest stable build from main branch
+- `main` - Alias for latest
+- `<version>` - Specific version tags (when releases are published)
+- `<branch>-<sha>` - Specific commit builds
+
+### Using Pre-built Images
+
+To use pre-built images instead of building from source:
+
+```bash
+# Pull the latest images
+docker compose -f docker-compose.ghcr.yml pull
+
+# Start the application
+docker compose -f docker-compose.ghcr.yml up -d
+```
+
+Or use the Makefile:
+
+```bash
+make up-ghcr
+```
+
+### Updating to Latest Version
+
+With pre-built images, updates are simple:
+
+```bash
+# Pull latest images and restart
+make pull-ghcr
+
+# Or manually:
+docker compose -f docker-compose.ghcr.yml pull
+docker compose -f docker-compose.ghcr.yml up -d
+```
+
+### Building from Source
+
+If you want to build the images yourself (for development or customization):
+
+```bash
+# Build images
+docker compose build
+
+# Start with built images
+docker compose up -d
 ```
 
 ## Production Deployment
