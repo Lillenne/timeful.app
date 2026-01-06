@@ -74,7 +74,7 @@ services:
       - timeful-network
     volumes:
       # Mount logs directory to persist logs
-      - app_logs:/app/logs.log
+      - app_logs:/app/logs
 
 networks:
   timeful-network:
