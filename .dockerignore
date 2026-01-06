@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+!DOCKER.md
+LICENSE
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Node modules (will be installed in container)
+frontend/node_modules
+frontend/.cache
+
+# Go build artifacts
+server/server
+server/logs.log
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Deployment scripts (not needed in container)
+deploy_scripts
+
+# Maintenance page
+maintenance_page
+
+# Scripts
+*.bat
+*.command
+open_vscode.*
+kill-sw.js
+
+# Test files
+*_test.go
+**/*_test.go

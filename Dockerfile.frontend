@@ -1,0 +1,22 @@
+# Stage 1: Build the frontend
+FROM node:18-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY frontend/package*.json ./
+RUN npm ci --prefer-offline --no-audit
+
+# Copy the frontend source code
+COPY frontend/ ./
+
+# Build the frontend for production
+# The backend will be accessed via /api path (same origin)
+ENV NODE_ENV=production
+RUN npm run build
+
+# Stage 2: Nginx is not needed since Go server serves the frontend
+# This stage just exports the dist folder
+FROM scratch AS dist
+COPY --from=builder /app/dist /dist

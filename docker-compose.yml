@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: timeful-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: schej-it
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - timeful-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Timeful Application (Backend + Frontend)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: timeful-app
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      # MongoDB Configuration
+      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_DB_NAME=schej-it
+      
+      # Google OAuth (Required for calendar integration)
+      # Create credentials at https://console.cloud.google.com/
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      
+      # Encryption (Required)
+      # Generate with: openssl rand -base64 32
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      
+      # Optional: Email Configuration (for notifications)
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD:-}
+      - SCHEJ_EMAIL_ADDRESS=${SCHEJ_EMAIL_ADDRESS:-}
+      
+      # Optional: Listmonk Configuration (for email campaigns)
+      - LISTMONK_URL=${LISTMONK_URL:-}
+      - LISTMONK_USERNAME=${LISTMONK_USERNAME:-}
+      - LISTMONK_PASSWORD=${LISTMONK_PASSWORD:-}
+      - LISTMONK_LIST_ID=${LISTMONK_LIST_ID:-}
+      
+      # Optional: Slack Configuration (for monitoring)
+      - SLACK_DEV_WEBHOOK_URL=${SLACK_DEV_WEBHOOK_URL:-}
+      - SLACK_PROD_WEBHOOK_URL=${SLACK_PROD_WEBHOOK_URL:-}
+      
+      # Optional: Stripe Configuration (for payments)
+      - STRIPE_API_KEY=${STRIPE_API_KEY:-}
+      
+      # Optional: Google Cloud Service Account (for advanced features)
+      - SERVICE_ACCOUNT_KEY_PATH=${SERVICE_ACCOUNT_KEY_PATH:-}
+      
+      # Optional: PostHog Analytics
+      - VUE_APP_POSTHOG_API_KEY=${VUE_APP_POSTHOG_API_KEY:-}
+      
+      # Server Configuration
+      - GIN_MODE=release
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - timeful-network
+    volumes:
+      # Mount logs directory to persist logs
+      - app_logs:/app/logs.log
+
+networks:
+  timeful-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  app_logs:
+    driver: local
