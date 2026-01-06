@@ -233,6 +233,42 @@ You can also add Caddy to your `docker-compose.yml`:
       - timeful-network
 ```
 
+### Configuring CORS for Custom Domains
+
+If you're using a custom domain or reverse proxy, you need to configure CORS to allow requests from your domain:
+
+1. **Add your domain to the CORS allowed origins**:
+   
+   Edit your `.env` file:
+   ```bash
+   CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+   ```
+
+2. **Multiple domains**: Separate with commas (no spaces):
+   ```bash
+   CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com,https://staging.yourdomain.com
+   ```
+
+3. **Default behavior**:
+   - If `CORS_ALLOWED_ORIGINS` is not set: Uses default domains (schej.it, timeful.app) plus localhost
+   - If `CORS_ALLOWED_ORIGINS` is set: Uses your custom domains plus localhost (replaces default domains)
+
+4. **Important**: 
+   - Always use the full URL including protocol (`https://`)
+   - Don't include trailing slashes
+   - Localhost origins (`:3002`, `:8080`) are always allowed automatically
+
+5. **Update Google OAuth redirect URI**:
+   
+   Don't forget to update your Google OAuth credentials to include your domain:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Update authorized redirect URI: `https://yourdomain.com/api/auth/google/callback`
+
+6. **Restart the application** after changing CORS settings:
+   ```bash
+   docker compose restart backend
+   ```
+
 ## Management Commands
 
 ### Using Makefile (Recommended)
