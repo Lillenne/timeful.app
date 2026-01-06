@@ -6,7 +6,7 @@
 help: ## Show this help message
 	@echo "Timeful Docker Commands:"
 	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 setup: ## Run initial setup (creates .env from template)
 	@./docker-setup.sh
@@ -14,20 +14,35 @@ setup: ## Run initial setup (creates .env from template)
 build: ## Build the Docker images
 	docker compose build
 
-up: ## Start the application
+up: ## Start the application (build from source)
 	docker compose up -d
 	@echo ""
 	@echo "✅ Timeful is starting!"
 	@echo "Access the application at: http://localhost:3002"
 
+up-ghcr: ## Start using pre-built images from GHCR (recommended)
+	docker compose -f docker-compose.ghcr.yml up -d
+	@echo ""
+	@echo "✅ Timeful is starting with pre-built images!"
+	@echo "Access the application at: http://localhost:3002"
+
 down: ## Stop the application
 	docker compose down
+
+down-ghcr: ## Stop the application (GHCR version)
+	docker compose -f docker-compose.ghcr.yml down
 
 restart: ## Restart the application
 	docker compose restart
 
+restart-ghcr: ## Restart the application (GHCR version)
+	docker compose -f docker-compose.ghcr.yml restart
+
 logs: ## View application logs
 	docker compose logs -f
+
+logs-ghcr: ## View application logs (GHCR version)
+	docker compose -f docker-compose.ghcr.yml logs -f
 
 logs-backend: ## View only backend logs
 	docker compose logs -f backend
@@ -40,6 +55,10 @@ logs-db: ## View only database logs
 
 clean: ## Stop and remove all containers and volumes (⚠️  deletes data!)
 	docker compose down -v
+	@echo "⚠️  All data has been deleted!"
+
+clean-ghcr: ## Stop and remove all containers and volumes (GHCR version)
+	docker compose -f docker-compose.ghcr.yml down -v
 	@echo "⚠️  All data has been deleted!"
 
 backup: ## Create a backup of the MongoDB database
@@ -82,7 +101,15 @@ pull: ## Pull latest changes and restart
 	docker compose up -d
 	@echo "✅ Updated to latest version"
 
+pull-ghcr: ## Pull latest pre-built images and restart (recommended for updates)
+	docker compose -f docker-compose.ghcr.yml pull
+	docker compose -f docker-compose.ghcr.yml up -d
+	@echo "✅ Updated to latest version"
+
 status: ## Show status of all containers
 	docker compose ps
+
+status-ghcr: ## Show status of all containers (GHCR version)
+	docker compose -f docker-compose.ghcr.yml ps
 
 .DEFAULT_GOAL := help

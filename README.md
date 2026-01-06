@@ -44,30 +44,57 @@ Built with [Vue 2](https://github.com/vuejs/vue), [MongoDB](https://github.com/m
 
 Timeful can be easily self-hosted using Docker Compose! 🐳
 
-### Quick Start
+### Quick Start with Pre-built Images (Recommended)
+
+The fastest way to get started:
+
+1. Install [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+2. Pull the pre-built images:
+   ```bash
+   docker pull ghcr.io/lillenne/timeful.app/backend:latest
+   docker pull ghcr.io/lillenne/timeful.app/frontend:latest
+   ```
+3. Clone the repository: `git clone https://github.com/schej-it/timeful.app.git`
+4. Copy the example environment file: `cp .env.example .env`
+5. Configure your `.env` file (minimum: `ENCRYPTION_KEY`)
+6. Start the application: `docker compose -f docker-compose.ghcr.yml up -d` or `make up-ghcr`
+7. Access at http://localhost:3002
+
+### Building from Source
+
+If you prefer to build the images yourself:
 
 1. Install [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
 2. Clone the repository: `git clone https://github.com/schej-it/timeful.app.git`
 3. Copy the example environment file: `cp .env.example .env`
-4. Configure your `.env` file with:
-   - Google OAuth credentials (required for calendar integration)
+4. Configure your `.env` file with at minimum:
    - Encryption key (generate with: `openssl rand -base64 32`)
-5. Start the application: `docker-compose up -d`
+5. Start the application: `docker compose up -d`
 6. Access at http://localhost:3002
+
+### Available Images
+
+Pre-built Docker images are automatically published to GitHub Container Registry:
+- **Backend**: `ghcr.io/lillenne/timeful.app/backend:latest`
+- **Frontend**: `ghcr.io/lillenne/timeful.app/frontend:latest`
+
+Images are built for both `linux/amd64` and `linux/arm64` platforms.
 
 ### Full Documentation
 
 See [DOCKER.md](./DOCKER.md) for complete self-hosting instructions, including:
-- Detailed setup guide
+- Detailed setup guide for both pre-built and source builds
 - Production deployment with reverse proxy (Nginx/Caddy)
-- Optional features configuration
+- Custom domain and CORS configuration
+- Optional features configuration (Google OAuth, Stripe, Email, etc.)
 - Backup and maintenance procedures
 - Troubleshooting tips
-- Podman support
+- Podman support with Quadlets
 
 ### Requirements
 
 - Docker (version 20.10+) or Podman
-- Google Cloud account (for OAuth and Calendar integration)
+- **Minimum**: Just an encryption key for anonymous event scheduling
+- **Optional**: Google Cloud account for user accounts and calendar integration
 - 2GB+ RAM recommended
 - 10GB+ disk space for MongoDB data
