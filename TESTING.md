@@ -254,7 +254,7 @@ else
 fi
 
 # Check MongoDB
-if docker compose exec mongodb mongosh --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
+if docker compose exec mongodb mongosh schej-it --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
     echo "✅ MongoDB is healthy"
 else
     echo "❌ MongoDB is not healthy"
