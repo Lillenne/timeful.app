@@ -148,7 +148,9 @@ func loadDotEnv() {
 	stripe.Key = os.Getenv("STRIPE_API_KEY")
 
 	if err != nil {
-		logger.StdErr.Panicln("Error loading .env file")
+		// In Docker or production environments, .env file might not exist
+		// Environment variables should be set directly
+		logger.StdOut.Println("No .env file found, using environment variables directly")
 	}
 }
 

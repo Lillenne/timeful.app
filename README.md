@@ -42,4 +42,32 @@ Built with [Vue 2](https://github.com/vuejs/vue), [MongoDB](https://github.com/m
 
 ## Self-hosting
 
-Coming soon...
+Timeful can be easily self-hosted using Docker Compose! 🐳
+
+### Quick Start
+
+1. Install [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+2. Clone the repository: `git clone https://github.com/schej-it/timeful.app.git`
+3. Copy the example environment file: `cp .env.example .env`
+4. Configure your `.env` file with:
+   - Google OAuth credentials (required for calendar integration)
+   - Encryption key (generate with: `openssl rand -base64 32`)
+5. Start the application: `docker-compose up -d`
+6. Access at http://localhost:3002
+
+### Full Documentation
+
+See [DOCKER.md](./DOCKER.md) for complete self-hosting instructions, including:
+- Detailed setup guide
+- Production deployment with reverse proxy (Nginx/Caddy)
+- Optional features configuration
+- Backup and maintenance procedures
+- Troubleshooting tips
+- Podman support
+
+### Requirements
+
+- Docker (version 20.10+) or Podman
+- Google Cloud account (for OAuth and Calendar integration)
+- 2GB+ RAM recommended
+- 10GB+ disk space for MongoDB data

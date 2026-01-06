@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,16 +22,28 @@ var FoldersCollection *mongo.Collection
 var FolderEventsCollection *mongo.Collection
 
 func Init() func() {
+	// Get MongoDB URI from environment variable, default to localhost
+	mongoURI := os.Getenv("MONGO_URI")
+	if mongoURI == "" {
+		mongoURI = "mongodb://localhost:27017"
+	}
+
+	// Get database name from environment variable, default to schej-it
+	dbName := os.Getenv("MONGO_DB_NAME")
+	if dbName == "" {
+		dbName = "schej-it"
+	}
+
 	// Establish mongodb connection
 	var ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	Client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost"))
+	Client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		logger.StdErr.Panicln(err)
 	}
 
 	// Define mongodb database + collections
-	Db = Client.Database("schej-it")
+	Db = Client.Database(dbName)
 	EventsCollection = Db.Collection("events")
 	UsersCollection = Db.Collection("users")
 	DailyUserLogCollection = Db.Collection("dailyuserlogs")
