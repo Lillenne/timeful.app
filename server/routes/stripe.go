@@ -113,6 +113,15 @@ func createCheckoutSession(c *gin.Context) {
 }
 
 func getPrice(c *gin.Context) {
+	// Check if Stripe is configured
+	if stripe.Key == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"stripeDisabled": true,
+			"message":        "Stripe is not configured. Premium features are disabled.",
+		})
+		return
+	}
+
 	// Get the experiment query parameter
 	exp := c.Query("exp")
 
