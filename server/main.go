@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -87,8 +88,24 @@ func main() {
 	router.Use(gin.Recovery())
 
 	// Cors
+	// Get allowed origins from environment variable or use defaults
+	allowedOrigins := []string{"http://localhost:3002", "http://localhost:8080"}
+	if envOrigins := os.Getenv("CORS_ALLOWED_ORIGINS"); envOrigins != "" {
+		// Split by comma and trim spaces
+		for _, origin := range strings.Split(envOrigins, ",") {
+			trimmedOrigin := strings.TrimSpace(origin)
+			if trimmedOrigin != "" {
+				allowedOrigins = append(allowedOrigins, trimmedOrigin)
+			}
+		}
+		logger.StdOut.Printf("CORS: Added custom origins from CORS_ALLOWED_ORIGINS: %v\n", envOrigins)
+	} else {
+		// Add production domains if not using custom origins
+		allowedOrigins = append(allowedOrigins, "https://www.schej.it", "https://schej.it", "https://www.timeful.app", "https://timeful.app")
+	}
+	
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3002", "http://localhost:8080", "https://www.schej.it", "https://schej.it", "https://www.timeful.app", "https://timeful.app"},
+		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PATCH", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
