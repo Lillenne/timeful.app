@@ -1,27 +1,28 @@
 [Unit]
-Description=Timeful Application
+Description=Timeful Backend API Server
 After=timeful-mongodb.service
 Requires=timeful-mongodb.service
 After=network-online.target
 Wants=network-online.target
 
 [Container]
-Image=localhost/timeful:latest
-ContainerName=timeful-app
+Image=localhost/timeful-backend:latest
+ContainerName=timeful-backend
 AutoUpdate=registry
 
 # Environment variables
 Environment=MONGO_URI=mongodb://timeful-mongodb:27017
 Environment=MONGO_DB_NAME=schej-it
 Environment=GIN_MODE=release
-EnvironmentFile=%h/.config/timeful/app.env
+EnvironmentFile=%h/.config/timeful/backend.env
 
 # Networking
 Network=timeful.network
-PublishPort=3002:3002
+# Expose internally only (not published to host)
+# Frontend will proxy to this
 
 # Volumes
-Volume=timeful-app-logs:/app/logs
+Volume=timeful-backend-logs:/app/logs
 
 [Service]
 Restart=unless-stopped

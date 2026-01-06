@@ -1,0 +1,25 @@
+[Unit]
+Description=Timeful Frontend Web Server
+After=timeful-backend.service
+Requires=timeful-backend.service
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=localhost/timeful-frontend:latest
+ContainerName=timeful-frontend
+AutoUpdate=registry
+
+# Networking
+Network=timeful.network
+PublishPort=3002:80
+
+# Environment (optional)
+Environment=VUE_APP_POSTHOG_API_KEY=${VUE_APP_POSTHOG_API_KEY:-}
+
+[Service]
+Restart=unless-stopped
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target
