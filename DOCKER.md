@@ -397,13 +397,26 @@ See [quadlets/README.md](./quadlets/README.md) for example files and [PODMAN.md]
 
 ## Architecture
 
-The Docker setup consists of:
+The Docker setup consists of three separate containers:
 
 - **MongoDB**: Database for storing events, users, and application data
-- **Timeful App**: Combined frontend (Vue.js) and backend (Go) in a single container
-  - Frontend: Built as static files and served by the Go server
-  - Backend: Go server handling API requests and serving frontend
-  - Port 3002: Main application access point
+  - Port 27017 (internal)
+  
+- **Backend (Go API Server)**: Handles API requests and business logic
+  - Port 3002 (internal only, not exposed to host)
+  - Connects to MongoDB
+  
+- **Frontend (Nginx + Vue.js)**: Serves static files and proxies API requests
+  - Port 80 → Host port 3002
+  - Proxies `/api` requests to backend container
+  - Proxies `/sockets/` for WebSocket connections
+  - Serves Vue.js static files with caching
+
+**Benefits of separation:**
+- Independent scaling of frontend and backend
+- Backend not directly exposed to internet
+- Nginx efficiently serves static files
+- Standard microservices architecture
 
 ## Security Considerations
 
