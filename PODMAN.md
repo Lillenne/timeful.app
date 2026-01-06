@@ -89,7 +89,7 @@ Network=timeful.network
 PublishPort=3002:3002
 
 # Volumes
-Volume=timeful-app-logs:/app/logs.log
+Volume=timeful-app-logs:/app/logs
 
 [Service]
 Restart=unless-stopped
