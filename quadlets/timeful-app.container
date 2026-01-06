@@ -1,0 +1,31 @@
+[Unit]
+Description=Timeful Application
+After=timeful-mongodb.service
+Requires=timeful-mongodb.service
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=localhost/timeful:latest
+ContainerName=timeful-app
+AutoUpdate=registry
+
+# Environment variables
+Environment=MONGO_URI=mongodb://timeful-mongodb:27017
+Environment=MONGO_DB_NAME=schej-it
+Environment=GIN_MODE=release
+EnvironmentFile=%h/.config/timeful/app.env
+
+# Networking
+Network=timeful.network
+PublishPort=3002:3002
+
+# Volumes
+Volume=timeful-app-logs:/app/logs.log
+
+[Service]
+Restart=unless-stopped
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

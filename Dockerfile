@@ -37,7 +37,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -o server .
 FROM alpine:latest
 
 # Install ca-certificates for HTTPS calls
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk update && apk --no-cache add ca-certificates tzdata
 
 WORKDIR /app
 

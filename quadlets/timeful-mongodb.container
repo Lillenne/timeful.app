@@ -1,0 +1,33 @@
+[Unit]
+Description=Timeful MongoDB Database
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/library/mongo:6.0
+ContainerName=timeful-mongodb
+AutoUpdate=registry
+
+# Environment
+Environment=MONGO_INITDB_DATABASE=schej-it
+
+# Networking
+Network=timeful.network
+PublishPort=27017:27017
+
+# Volumes
+Volume=timeful-mongodb-data:/data/db
+Volume=timeful-mongodb-config:/data/configdb
+
+# Health check
+HealthCmd=mongosh --eval "db.adminCommand('ping')" --quiet
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=5
+
+[Service]
+Restart=unless-stopped
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

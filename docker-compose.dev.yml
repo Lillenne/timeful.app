@@ -1,0 +1,53 @@
+# Development Docker Compose Configuration
+# Use this for testing without requiring all environment variables
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: timeful-mongodb-dev
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_dev_data:/data/db
+    networks:
+      - timeful-dev-network
+
+  # Timeful Application (Backend + Frontend)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: timeful-app-dev
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      # MongoDB Configuration
+      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_DB_NAME=schej-it-dev
+      
+      # Development mode - no OAuth required for basic testing
+      # For full functionality, add your credentials in .env
+      - CLIENT_ID=${CLIENT_ID:-}
+      - CLIENT_SECRET=${CLIENT_SECRET:-}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-dev_encryption_key_change_in_production}
+      
+      # Server Configuration
+      - GIN_MODE=debug
+    depends_on:
+      - mongodb
+    networks:
+      - timeful-dev-network
+    volumes:
+      # Mount logs directory
+      - ./logs:/app/logs
+
+networks:
+  timeful-dev-network:
+    driver: bridge
+
+volumes:
+  mongodb_dev_data:
+    driver: local

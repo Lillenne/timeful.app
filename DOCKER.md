@@ -17,7 +17,29 @@ git clone https://github.com/schej-it/timeful.app.git
 cd timeful.app
 ```
 
-### 2. Set Up Environment Variables
+### 2. Run the Setup Script (Recommended)
+
+The easiest way to get started:
+
+```bash
+./docker-setup.sh
+```
+
+This script will:
+- Check if Docker and Docker Compose are installed
+- Create a `.env` file from the template
+- Guide you through the configuration
+- Start the application
+
+**Or use the Makefile:**
+
+```bash
+make setup
+```
+
+### 3. Manual Setup (Alternative)
+
+If you prefer to set up manually:
 
 Copy the example environment file and configure it:
 
@@ -58,10 +80,18 @@ Edit `.env` and configure the required settings:
      ENCRYPTION_KEY=your_generated_key_here
      ```
 
-### 3. Start the Application
+### 4. Start the Application
+
+**Using the Makefile (recommended):**
 
 ```bash
-docker-compose up -d
+make up
+```
+
+**Or using Docker Compose directly:**
+
+```bash
+docker compose up -d
 ```
 
 This will:
@@ -70,11 +100,31 @@ This will:
 - Start all services
 - Create persistent volumes for data storage
 
-### 4. Access the Application
+### 5. Access the Application
 
 Open your browser and navigate to:
 - **Application**: http://localhost:3002
 - **API Documentation**: http://localhost:3002/swagger/index.html
+
+## Makefile Commands
+
+For easier management, use the included Makefile:
+
+```bash
+make help          # Show all available commands
+make setup         # Run initial setup
+make up            # Start the application
+make down          # Stop the application
+make restart       # Restart the application
+make logs          # View logs (all services)
+make logs-app      # View app logs only
+make logs-db       # View database logs only
+make backup        # Backup MongoDB database
+make restore       # Restore from latest backup
+make pull          # Pull updates and restart
+make status        # Show container status
+make clean         # Stop and remove everything (⚠️  deletes data!)
+```
 
 ## Optional Features
 
@@ -185,27 +235,46 @@ You can also add Caddy to your `docker-compose.yml`:
 
 ## Management Commands
 
-### View Logs
+### Using Makefile (Recommended)
+
+```bash
+make logs          # View all logs
+make logs-app      # View app logs only
+make logs-db       # View database logs only
+make restart       # Restart services
+make down          # Stop services
+make status        # Check container status
+make backup        # Create database backup
+make restore       # Restore from backup
+```
+
+### Using Docker Compose Directly
+
+#### View Logs
 
 ```bash
 # All services
-docker-compose logs -f
+docker compose logs -f
 
 # Specific service
-docker-compose logs -f app
-docker-compose logs -f mongodb
+docker compose logs -f app
+docker compose logs -f mongodb
 ```
 
 ### Stop the Application
 
 ```bash
-docker-compose down
+make down
+# or
+docker compose down
 ```
 
 ### Stop and Remove All Data
 
 ```bash
-docker-compose down -v
+make clean
+# or
+docker compose down -v
 ```
 
 ### Rebuild the Application
@@ -213,17 +282,20 @@ docker-compose down -v
 If you pull updates from the repository:
 
 ```bash
+make pull
+# or manually:
 git pull
-docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
+docker compose down
+docker compose build --no-cache
+docker compose up -d
 ```
 
 ### Backup MongoDB Data
 
 ```bash
-# Create backup
-docker-compose exec mongodb mongodump --db=schej-it --out=/data/backup
+make backup
+# or manually:
+docker compose exec mongodb mongodump --db=schej-it --out=/data/backup
 
 # Copy backup to host
 docker cp timeful-mongodb:/data/backup ./mongodb-backup
@@ -305,9 +377,23 @@ podman-compose down
 
 ### Podman Quadlets (systemd integration)
 
-For systemd integration with Podman, you can create quadlet files. See [Podman Quadlets documentation](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html) for more information.
+For systemd integration with Podman, you can use Quadlets to run Timeful as system services.
 
-Example quadlet setup is coming soon.
+**Complete Quadlet setup is available in [PODMAN.md](./PODMAN.md)**
+
+Quick start:
+```bash
+# Copy quadlet files
+mkdir -p ~/.config/containers/systemd
+cp quadlets/*.{container,network} ~/.config/containers/systemd/
+
+# Build and enable
+podman build -t localhost/timeful:latest .
+systemctl --user daemon-reload
+systemctl --user enable --now timeful-mongodb.service timeful-app.service
+```
+
+See [quadlets/README.md](./quadlets/README.md) for example files and [PODMAN.md](./PODMAN.md) for complete documentation.
 
 ## Architecture
 
