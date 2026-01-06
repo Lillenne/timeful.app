@@ -12,11 +12,20 @@ RUN npm ci --prefer-offline --no-audit
 COPY frontend/ ./
 
 # Build the frontend for production
-# The backend will be accessed via /api path (same origin)
 ENV NODE_ENV=production
 RUN npm run build
 
-# Stage 2: Nginx is not needed since Go server serves the frontend
-# This stage just exports the dist folder
-FROM scratch AS dist
-COPY --from=builder /app/dist /dist
+# Stage 2: Serve with Nginx
+FROM nginx:alpine
+
+# Copy built frontend files
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 80
+EXPOSE 80
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]

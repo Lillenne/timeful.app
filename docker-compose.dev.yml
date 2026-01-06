@@ -14,15 +14,15 @@ services:
     networks:
       - timeful-dev-network
 
-  # Timeful Application (Backend + Frontend)
-  app:
+  # Backend API Server
+  backend:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: timeful-app-dev
+      dockerfile: Dockerfile.backend
+    container_name: timeful-backend-dev
     restart: unless-stopped
-    ports:
-      - "3002:3002"
+    expose:
+      - "3002"
     environment:
       # MongoDB Configuration
       - MONGO_URI=mongodb://mongodb:27017
@@ -43,6 +43,20 @@ services:
     volumes:
       # Mount logs directory
       - ./logs:/app/logs
+
+  # Frontend Web Server
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: timeful-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "3002:80"
+    depends_on:
+      - backend
+    networks:
+      - timeful-dev-network
 
 networks:
   timeful-dev-network:

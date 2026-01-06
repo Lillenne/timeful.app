@@ -21,7 +21,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -o server .
 FROM alpine:latest
 
 # Install ca-certificates for HTTPS calls
-RUN apk --no-cache add ca-certificates
+RUN apk update && apk --no-cache add ca-certificates tzdata
 
 # Set working directory
 WORKDIR /app
@@ -29,9 +29,8 @@ WORKDIR /app
 # Copy the server binary from the builder stage
 COPY --from=builder /app/server ./server
 
-# Copy the frontend dist folder (will be built in multi-stage or volume mounted)
-# The frontend will be copied from the frontend build stage or mounted as volume
-COPY --from=frontend-builder /app/dist /app/frontend/dist
+# Create directory for logs
+RUN mkdir -p /app/logs && chmod 755 /app/logs
 
 # Expose the port the server runs on
 EXPOSE 3002

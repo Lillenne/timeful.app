@@ -5,7 +5,8 @@ This directory contains example Podman Quadlet files for running Timeful as syst
 ## Files
 
 - `timeful-mongodb.container` - MongoDB database service
-- `timeful-app.container` - Timeful application service
+- `timeful-backend.container` - Backend API server service
+- `timeful-frontend.container` - Frontend web server service
 - `timeful.network` - Network configuration for inter-container communication
 
 ## Installation
@@ -20,21 +21,23 @@ mkdir -p ~/.config/containers/systemd
 cp quadlets/*.container ~/.config/containers/systemd/
 cp quadlets/*.network ~/.config/containers/systemd/
 
-# Create environment file
+# Create environment file for backend
 mkdir -p ~/.config/timeful
-cp .env.example ~/.config/timeful/app.env
-# Edit app.env with your configuration
-nano ~/.config/timeful/app.env
+cp .env.example ~/.config/timeful/backend.env
+# Edit backend.env with your configuration
+nano ~/.config/timeful/backend.env
 
-# Build the image
-podman build -t localhost/timeful:latest .
+# Build the images
+podman build -f Dockerfile.backend -t localhost/timeful-backend:latest .
+podman build -f Dockerfile.frontend -t localhost/timeful-frontend:latest .
 
 # Reload systemd
 systemctl --user daemon-reload
 
 # Enable and start services
 systemctl --user enable --now timeful-mongodb.service
-systemctl --user enable --now timeful-app.service
+systemctl --user enable --now timeful-backend.service
+systemctl --user enable --now timeful-frontend.service
 
 # Enable linger to keep services running when logged out
 loginctl enable-linger $USER
@@ -47,41 +50,46 @@ loginctl enable-linger $USER
 sudo cp quadlets/*.container /etc/containers/systemd/
 sudo cp quadlets/*.network /etc/containers/systemd/
 
-# Create environment file
+# Create environment file for backend
 sudo mkdir -p /etc/timeful
-sudo cp .env.example /etc/timeful/app.env
-# Edit app.env with your configuration
-sudo nano /etc/timeful/app.env
+sudo cp .env.example /etc/timeful/backend.env
+# Edit backend.env with your configuration
+sudo nano /etc/timeful/backend.env
 
-# Update app.container to use system path
-sudo sed -i 's|%h/.config/timeful|/etc/timeful|g' /etc/containers/systemd/timeful-app.container
+# Update backend.container to use system path
+sudo sed -i 's|%h/.config/timeful|/etc/timeful|g' /etc/containers/systemd/timeful-backend.container
 
-# Build the image
-sudo podman build -t localhost/timeful:latest .
+# Build the images
+sudo podman build -f Dockerfile.backend -t localhost/timeful-backend:latest .
+sudo podman build -f Dockerfile.frontend -t localhost/timeful-frontend:latest .
 
 # Reload systemd
 sudo systemctl daemon-reload
 
 # Enable and start services
 sudo systemctl enable --now timeful-mongodb.service
-sudo systemctl enable --now timeful-app.service
+sudo systemctl enable --now timeful-backend.service
+sudo systemctl enable --now timeful-frontend.service
 ```
 
 ## Management
 
 Check status:
 ```bash
-systemctl --user status timeful-app.service
+systemctl --user status timeful-backend.service
+systemctl --user status timeful-frontend.service
 ```
 
 View logs:
 ```bash
-journalctl --user -u timeful-app.service -f
+journalctl --user -u timeful-backend.service -f
+journalctl --user -u timeful-frontend.service -f
 ```
 
 Restart:
 ```bash
-systemctl --user restart timeful-app.service
+systemctl --user restart timeful-backend.service
+systemctl --user restart timeful-frontend.service
 ```
 
 For system services, remove `--user` flag and add `sudo`.

@@ -29,8 +29,11 @@ restart: ## Restart the application
 logs: ## View application logs
 	docker compose logs -f
 
-logs-app: ## View only app logs
-	docker compose logs -f app
+logs-backend: ## View only backend logs
+	docker compose logs -f backend
+
+logs-frontend: ## View only frontend logs
+	docker compose logs -f frontend
 
 logs-db: ## View only database logs
 	docker compose logs -f mongodb
@@ -57,8 +60,11 @@ restore: ## Restore from the latest backup (⚠️  overwrites data!)
 	docker compose exec mongodb mongorestore --db=schej-it /data/restore/schej-it --drop
 	@echo "✅ Restore completed"
 
-shell-app: ## Open a shell in the app container
-	docker compose exec app sh
+shell-backend: ## Open a shell in the backend container
+	docker compose exec backend sh
+
+shell-frontend: ## Open a shell in the frontend container
+	docker compose exec frontend sh
 
 shell-db: ## Open MongoDB shell
 	docker compose exec mongodb mongosh schej-it
