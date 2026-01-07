@@ -1,5 +1,36 @@
 # Self-Hosting Feature - Changes Summary
 
+## Recent Updates
+
+### Microsoft OAuth / Outlook Calendar Integration Support (January 2026)
+
+Added complete support for Microsoft Entra ID (formerly Azure AD) OAuth configuration to enable Outlook calendar integration in self-hosted deployments.
+
+#### Changes Made:
+- **Removed hardcoded credentials**: Eliminated hardcoded Microsoft client ID from frontend code
+- **Added environment variables**: MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET
+- **Enhanced configuration**: Added `microsoftClientId` field to config.js
+- **Comprehensive documentation**: Step-by-step Microsoft Entra ID setup guide in DOCKER.md, QUICKSTART.md, and PODMAN.md
+- **Docker support**: All docker-compose files now pass Microsoft OAuth variables
+- **Improved setup script**: docker-setup.sh now creates config.js and mentions Microsoft OAuth
+- **Error handling**: Frontend shows helpful error if Microsoft OAuth is not configured
+
+#### Modified Files:
+- `.env.example` - Added Microsoft OAuth documentation
+- `config.example.js` - Added microsoftClientId field
+- `frontend/src/utils/sign_in_utils.js` - Removed hardcoded client ID, reads from config
+- `DOCKER.md` - Added comprehensive Azure AD setup instructions
+- `QUICKSTART.md` - Added quick reference for Microsoft OAuth
+- `PODMAN.md` - Added Microsoft OAuth environment variables
+- `server/.env.template` - Added Microsoft OAuth credentials
+- All `docker-compose.*.yml` files - Added Microsoft OAuth environment variables
+- `docker-setup.sh` - Enhanced to create config.js and mention Microsoft OAuth
+- `Makefile` - Updated startup messages
+
+This makes Outlook calendar integration fully functional in self-hosted deployments!
+
+---
+
 ## Overview
 
 This implementation adds complete Docker and Podman support for self-hosting Timeful, addressing issue #118.
