@@ -218,7 +218,7 @@ export const isPremiumUser = (authUser) => {
   if (!authUser) return false
 
   // Check isPremium field first (for self-hosted premium support)
-  if (authUser.isPremium !== null && authUser.isPremium !== undefined) {
+  if (authUser.isPremium != null) {
     return authUser.isPremium
   }
 
