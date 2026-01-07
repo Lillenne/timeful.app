@@ -1,2 +1,0 @@
-2026/01/07 06:26:22 /home/runner/work/timeful.app/timeful.app/server/logger/logger.go:16: [INFO] ######### Server Restarted #########
-2026/01/07 06:26:22 /home/runner/work/timeful.app/timeful.app/server/services/listmonk/listmonk_test.go:26: [ERROR] Error loading .env file

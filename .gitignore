@@ -1,6 +1,7 @@
 
 *.exe
 server/logs.log
+server/services/*/logs.log
 .DS_Store
 server/server
 deploy_scripts/reboot_log.txt
