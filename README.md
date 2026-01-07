@@ -87,6 +87,7 @@ See [DOCKER.md](./DOCKER.md) for complete self-hosting instructions, including:
 - Production deployment with reverse proxy (Nginx/Caddy)
 - Custom domain and CORS configuration
 - Optional features configuration (Google OAuth, Stripe, Email, etc.)
+- **Premium features automatically unlocked** for self-hosted deployments
 - Backup and maintenance procedures
 - Troubleshooting tips
 - Podman support with Quadlets
@@ -98,3 +99,7 @@ See [DOCKER.md](./DOCKER.md) for complete self-hosting instructions, including:
 - **Optional**: Google Cloud account for user accounts and calendar integration
 - 2GB+ RAM recommended
 - 10GB+ disk space for MongoDB data
+
+### Self-Hosted Premium Features
+
+By default, all premium features are **automatically unlocked** for self-hosted deployments! No payment processing or Stripe configuration required. Perfect for organizations wanting to run Timeful for their teams.
