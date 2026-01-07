@@ -33,7 +33,9 @@ if [ ! -f config.js ]; then
     cp config.example.js config.js
     echo "✅ config.js file created"
     echo ""
-    echo "⚠️  NOTE: You should edit config.js to add your OAuth client IDs after configuring .env"
+    echo "⚠️  NOTE: After configuring .env, remember to also edit config.js"
+    echo "   Steps: 1) Configure .env with your OAuth secrets"
+    echo "          2) Update config.js with your client IDs (from .env)"
     echo ""
 else
     echo "✅ config.js file already exists"
