@@ -1,19 +1,27 @@
 # Podman Quadlets Setup for Timeful
 
-Podman Quadlets allow you to run containers as systemd services, providing better integration with system management.
+Podman Quadlets allow you to run containers as systemd services, providing better integration with system management. Podman runs rootless by default, providing enhanced security.
 
 ## Prerequisites
 
 - Podman 4.4 or later
 - systemd
 
+## Security Features
+
+All container images are hardened with security best practices:
+- **Non-root users**: Containers run as dedicated non-root users
+- **Minimal capabilities**: Only essential Linux capabilities are enabled
+- **No privilege escalation**: Security options prevent privilege escalation
+- **Rootless by default**: Podman runs without requiring root privileges
+
 ## Setup Instructions
 
 ### 1. Create Quadlet Files
 
 Quadlet files should be placed in one of these directories:
-- System-wide: `/etc/containers/systemd/`
-- User-specific: `~/.config/containers/systemd/`
+- System-wide: `/etc/containers/systemd/` (requires root)
+- User-specific: `~/.config/containers/systemd/` (recommended - runs rootless)
 
 For user services (recommended for non-root deployment):
 
@@ -36,6 +44,9 @@ Image=docker.io/library/mongo:6.0
 ContainerName=timeful-mongodb
 AutoUpdate=registry
 
+# Run as non-root user (mongodb user in official image)
+User=999:999
+
 # Environment
 Environment=MONGO_INITDB_DATABASE=schej-it
 
@@ -46,6 +57,10 @@ PublishPort=27017:27017
 # Volumes
 Volume=timeful-mongodb-data:/data/db
 Volume=timeful-mongodb-config:/data/configdb
+
+# Security options
+SecurityLabelDisable=false
+NoNewPrivileges=true
 
 # Health check
 HealthCmd=mongosh --eval "db.adminCommand('ping')" --quiet
@@ -78,6 +93,9 @@ Image=localhost/timeful-backend:latest
 ContainerName=timeful-backend
 AutoUpdate=registry
 
+# Run as non-root user (appuser defined in image)
+User=1000:1000
+
 # Environment variables
 Environment=MONGO_URI=mongodb://timeful-mongodb:27017
 Environment=MONGO_DB_NAME=schej-it
@@ -90,6 +108,10 @@ Network=timeful.network
 
 # Volumes
 Volume=timeful-backend-logs:/app/logs
+
+# Security options
+SecurityLabelDisable=false
+NoNewPrivileges=true
 
 [Service]
 Restart=unless-stopped
@@ -116,12 +138,20 @@ Image=localhost/timeful-frontend:latest
 ContainerName=timeful-frontend
 AutoUpdate=registry
 
+# Run as non-root user (nginx user in nginx:alpine image)
+User=101:101
+
 # Networking
 Network=timeful.network
 PublishPort=3002:80
 
 # Environment (optional)
-Environment=VUE_APP_POSTHOG_API_KEY=${VUE_APP_POSTHOG_API_KEY:-}
+Environment=BACKEND_HOST=timeful-backend
+Environment=BACKEND_PORT=3002
+
+# Security options
+SecurityLabelDisable=false
+NoNewPrivileges=true
 
 [Service]
 Restart=unless-stopped
@@ -329,6 +359,96 @@ podman inspect timeful-mongodb
 ```bash
 podman exec timeful-backend ping -c 3 timeful-mongodb
 ```
+
+### Verify security configuration
+
+Check that containers are running as non-root:
+
+```bash
+# Check user IDs in running containers
+podman exec timeful-backend id
+podman exec timeful-frontend id
+podman exec timeful-mongodb id
+
+# Verify no-new-privileges setting
+podman inspect timeful-backend | grep -i "NoNewPrivileges"
+podman inspect timeful-frontend | grep -i "NoNewPrivileges"
+```
+
+## Rootless Podman Benefits
+
+Podman runs rootless by default when used as a regular user, providing several security advantages:
+
+### Security Advantages
+
+1. **No Root Required**: Containers run entirely within your user namespace
+   - No need for sudo or root privileges
+   - Container breaches cannot compromise the host system
+   - Natural isolation between users
+
+2. **User Namespace Mapping**: UIDs/GIDs are automatically mapped
+   - Container UID 1000 (appuser) maps to your user's subuid range
+   - Host filesystem is protected from container processes
+   - Works transparently with our fixed UIDs
+
+3. **Enhanced Security**: Multiple layers of protection
+   - SELinux/AppArmor integration (where available)
+   - Seccomp filtering
+   - No new privileges by default
+   - Capability dropping
+
+### Compatibility Notes
+
+The hardened Docker images work seamlessly with rootless Podman:
+
+- **Fixed UIDs**: Backend (1000), Frontend (101), MongoDB (999)
+  - These are automatically mapped to your user's subuid range
+  - Volume permissions work correctly out of the box
+  - No manual chown operations needed
+
+- **Volume Mounts**: Named volumes handle permissions automatically
+  - Podman manages UID/GID mappings transparently
+  - Files created by containers are owned by your user on the host
+  - Backup and restore operations work normally
+
+- **Port Binding**: Ports < 1024 work with rootless Podman
+  - Frontend binds to port 80 internally (mapped to 3002 on host)
+  - Podman allows unprivileged port binding with slirp4netns
+  - No special configuration needed
+
+### Using Podman Compose
+
+For simpler deployment without systemd:
+
+```bash
+# Install podman-compose
+pip3 install podman-compose
+
+# Use with any docker-compose.yml file
+podman-compose -f docker-compose.yml up -d
+podman-compose -f docker-compose.yml logs -f
+podman-compose -f docker-compose.yml down
+
+# All security features work automatically
+# No root required, completely rootless
+```
+
+### Rootless vs Rootful
+
+**Rootless (Recommended)**:
+- Runs as regular user
+- More secure
+- No sudo needed
+- User systemd services
+- Limited to your user's processes
+
+**Rootful** (System-wide):
+- Requires root/sudo
+- System-wide services
+- Traditional Docker-like behavior
+- Place quadlets in `/etc/containers/systemd/`
+
+For most use cases, rootless mode is recommended.
 
 ## System-wide Installation
 

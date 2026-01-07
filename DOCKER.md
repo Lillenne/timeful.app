@@ -656,6 +656,50 @@ The Docker setup consists of three separate containers:
 
 ## Security Considerations
 
+The Docker images have been hardened with security best practices:
+
+### Container Security Hardening
+
+1. **Non-root Users**: All containers run as non-root users by default
+   - Backend: Runs as `appuser` (UID 1000)
+   - Frontend: Runs as `nginx` user (UID 101)
+   - MongoDB: Runs as `mongodb` user (UID 999)
+
+2. **Capability Dropping**: Containers drop all capabilities by default, only adding specific ones needed
+   - Backend: Minimal capabilities (drops ALL)
+   - Frontend: Only NET_BIND_SERVICE, CHOWN, SETGID, SETUID for nginx operation
+   - MongoDB: Only CHOWN, SETGID, SETUID for database operations
+
+3. **No New Privileges**: Security option `no-new-privileges:true` prevents privilege escalation
+
+4. **Read-Only Mounts**: Configuration files are mounted read-only where possible
+
+### Rootless Container Support
+
+The configuration works seamlessly with both rootful and rootless container runtimes:
+
+**Docker Rootless Mode:**
+```bash
+# Install Docker in rootless mode (if not already done)
+dockerd-rootless-setuptool.sh install
+
+# Use Docker normally - UID/GID mappings handled automatically
+docker compose up -d
+```
+
+**Podman (Rootless by Default):**
+```bash
+# Podman runs rootless by default - just use it
+podman-compose up -d
+
+# Or with systemd integration
+systemctl --user start timeful-backend.service
+```
+
+The fixed UIDs (1000 for backend, 101 for frontend, 999 for MongoDB) ensure consistent permissions across different environments. Volume mounts automatically work with user namespace mapping in both Docker and Podman rootless modes.
+
+### Additional Security Best Practices
+
 1. **Change default ports** in production
 2. **Use strong encryption key** (generate with `openssl rand -base64 32`)
 3. **Keep Google OAuth credentials secure** - never commit to version control
@@ -663,6 +707,30 @@ The Docker setup consists of three separate containers:
 5. **Regular backups** of MongoDB data
 6. **Use HTTPS** in production (via reverse proxy)
 7. **Keep Docker images updated** regularly
+8. **Review and audit** container logs regularly
+9. **Use network segmentation** - containers communicate only through defined networks
+10. **Implement resource limits** (CPU, memory) in production environments
+
+### Security Testing
+
+To verify the security configuration:
+
+```bash
+# Check that containers run as non-root
+docker compose ps --format "{{.Name}}: {{.Image}}"
+docker compose exec backend id
+docker compose exec frontend id
+docker compose exec mongodb id
+
+# Verify capabilities
+docker inspect timeful-backend | grep -A 20 CapDrop
+docker inspect timeful-frontend | grep -A 20 CapDrop
+
+# Check security options
+docker inspect timeful-backend | grep -A 5 SecurityOpt
+```
+
+All containers should report running as non-root users with minimal capabilities.
 
 ## Support
 
