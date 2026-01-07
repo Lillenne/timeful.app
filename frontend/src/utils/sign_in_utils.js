@@ -54,7 +54,9 @@ export const signInOutlook = ({
   // Check if Microsoft client ID is configured
   if (!clientId) {
     console.error("Microsoft client ID not configured. Please set microsoftClientId in config.js")
-    alert("Outlook calendar integration is not configured. Please contact your administrator.")
+    // Note: Using alert here since this is called before navigation and outside component context.
+    // Consider enhancing with a proper notification system if this becomes common.
+    alert("Outlook calendar integration is not configured.\n\nPlease ask your administrator to:\n1. Create a Microsoft Entra ID app registration\n2. Configure MICROSOFT_CLIENT_ID in .env\n3. Set microsoftClientId in config.js")
     return
   }
   
