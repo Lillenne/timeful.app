@@ -354,41 +354,99 @@ You can also add Caddy to your `docker-compose.yml`:
       - timeful-network
 ```
 
-### Configuring CORS for Custom Domains
+### Configuring for Custom Domains
 
-If you're using a custom domain or reverse proxy, you need to configure CORS to allow requests from your domain:
+If you're using a custom domain or reverse proxy, you need to configure both the base URL and CORS:
 
-1. **Add your domain to the CORS allowed origins**:
-   
-   Edit your `.env` file:
-   ```bash
-   CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
-   ```
+#### 1. Set the Base URL
 
-2. **Multiple domains**: Separate with commas (no spaces):
-   ```bash
-   CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com,https://staging.yourdomain.com
-   ```
+**IMPORTANT**: This is required for Google OAuth to work with custom domains.
 
-3. **Default behavior**:
-   - If `CORS_ALLOWED_ORIGINS` is not set: Uses default domains (schej.it, timeful.app) plus localhost
-   - If `CORS_ALLOWED_ORIGINS` is set: Uses your custom domains plus localhost (replaces default domains)
+Edit your `.env` file and set `BASE_URL` to your domain:
 
-4. **Important**: 
-   - Always use the full URL including protocol (`https://`)
-   - Don't include trailing slashes
-   - Localhost origins (`:3002`, `:8080`) are always allowed automatically
+```bash
+BASE_URL=https://yourdomain.com
+```
 
-5. **Update Google OAuth redirect URI**:
-   
-   Don't forget to update your Google OAuth credentials to include your domain:
-   - Go to [Google Cloud Console](https://console.cloud.google.com/)
-   - Update authorized redirect URI: `https://yourdomain.com/api/auth/google/callback`
+For local Docker development:
+```bash
+BASE_URL=http://localhost:3002
+```
 
-6. **Restart the application** after changing CORS settings:
-   ```bash
-   docker compose restart backend
-   ```
+The `BASE_URL` is used for:
+- OAuth redirect URIs (e.g., `{BASE_URL}/api/auth/google/callback`)
+- Email links and event URLs
+- Stripe payment redirects
+
+#### 2. Configure CORS
+
+Add your domain to the CORS allowed origins in `.env`:
+
+```bash
+CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+```
+
+For multiple domains (separate with commas, no spaces):
+```bash
+CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com,https://staging.yourdomain.com
+```
+
+**Default behavior**:
+- If `CORS_ALLOWED_ORIGINS` is not set: Uses default domains (schej.it, timeful.app) plus localhost
+- If `CORS_ALLOWED_ORIGINS` is set: Uses your custom domains plus localhost (replaces default domains)
+
+**Important**: 
+- Always use the full URL including protocol (`https://`)
+- Don't include trailing slashes
+- Localhost origins (`:3002`, `:8080`) are always allowed automatically
+
+#### 3. Update Google OAuth Credentials
+
+**Critical**: Your Google OAuth credentials must match your BASE_URL.
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to APIs & Services > Credentials
+3. Edit your OAuth 2.0 Client ID
+4. Add authorized redirect URI: `{BASE_URL}/api/auth/google/callback`
+   - Example: `https://yourdomain.com/api/auth/google/callback`
+   - For Docker: `http://localhost:3002/api/auth/google/callback`
+
+#### 4. Complete Example Configuration
+
+For a custom domain deployment:
+
+```bash
+# .env file
+ENCRYPTION_KEY=your_encryption_key_here
+BASE_URL=https://yourdomain.com
+CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+CLIENT_ID=your_google_client_id
+CLIENT_SECRET=your_google_client_secret
+```
+
+For Docker local development:
+
+```bash
+# .env file
+ENCRYPTION_KEY=your_encryption_key_here
+BASE_URL=http://localhost:3002
+CLIENT_ID=your_google_client_id
+CLIENT_SECRET=your_google_client_secret
+```
+
+#### 5. Restart the Application
+
+After changing these settings:
+
+```bash
+docker compose restart backend
+```
+
+Or with GHCR images:
+
+```bash
+docker compose -f docker-compose.ghcr.yml restart backend
+```
 
 ## Management Commands
 

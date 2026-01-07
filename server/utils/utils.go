@@ -114,7 +114,15 @@ func PrintHttpResponse(resp *http.Response) {
 }
 
 // Returns the correct base url, based on whether we're on dev or prod
+// Can be overridden with BASE_URL environment variable for custom deployments
 func GetBaseUrl() string {
+	// Check for custom base URL from environment variable
+	envBaseUrl := os.Getenv("BASE_URL")
+	if envBaseUrl != "" {
+		return envBaseUrl
+	}
+	
+	// Default behavior based on release mode
 	var baseUrl string
 	if IsRelease() {
 		baseUrl = "https://timeful.app"
