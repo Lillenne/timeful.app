@@ -74,8 +74,8 @@ for file in docker-compose.yml docker-compose.dev.yml docker-compose.ghcr.yml; d
     echo "Checking $file..."
     
     # Check user directives
-    if check_in_file "$file" 'user: "1000:1000"' || check_in_file "$file" 'user: "101:101"'; then
-        echo -e "${GREEN}✓ Services have user directives${NC}"
+    if check_in_file "$file" 'user: "1000:1000"' && check_in_file "$file" 'user: "101:101"' && check_in_file "$file" 'user: "999:999"'; then
+        echo -e "${GREEN}✓ All services have user directives (1000, 101, 999)${NC}"
     else
         echo -e "${RED}✗ Missing user directives${NC}"
         exit 1
