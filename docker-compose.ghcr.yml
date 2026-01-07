@@ -49,6 +49,11 @@ services:
       - CLIENT_ID=${CLIENT_ID:-}
       - CLIENT_SECRET=${CLIENT_SECRET:-}
       
+      # Microsoft OAuth (Optional - for Outlook calendar integration)
+      # Create app registration at https://portal.azure.com/
+      - MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID:-}
+      - MICROSOFT_CLIENT_SECRET=${MICROSOFT_CLIENT_SECRET:-}
+      
       # Encryption (Required)
       # Generate with: openssl rand -base64 32
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}

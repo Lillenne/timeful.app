@@ -136,6 +136,74 @@ Edit `.env` and configure the required settings:
      ENCRYPTION_KEY=your_generated_key_here
      ```
 
+#### Optional Configuration
+
+3. **Microsoft OAuth Credentials** (Optional - for Outlook calendar integration)
+   
+   If you want to enable Outlook/Microsoft 365 calendar integration, you need to create a Microsoft Entra ID (formerly Azure AD) application:
+
+   **Step-by-step setup:**
+   
+   a. **Create an App Registration:**
+      - Go to [Azure Portal](https://portal.azure.com/)
+      - Navigate to **Azure Active Directory** → **App registrations** → **New registration**
+      - Enter application details:
+        - **Name:** `Timeful Self-Hosted` (or any name you prefer)
+        - **Supported account types:** Select "Accounts in any organizational directory and personal Microsoft accounts (Multitenant + Personal)"
+        - **Redirect URI:** Select "Web" and enter: `http://localhost:3002/auth`
+          - For production, use your domain: `https://yourdomain.com/auth`
+      - Click **Register**
+
+   b. **Get Client ID:**
+      - After registration, you'll see the **Overview** page
+      - Copy the **Application (client) ID** - this is your `MICROSOFT_CLIENT_ID`
+      - Add it to your `.env` file:
+        ```
+        MICROSOFT_CLIENT_ID=your_microsoft_client_id_here
+        ```
+
+   c. **Create Client Secret:**
+      - In the same app registration, go to **Certificates & secrets**
+      - Click **New client secret**
+      - Add a description (e.g., "Timeful Self-Hosted Secret")
+      - Choose an expiration period (recommend: 24 months)
+      - Click **Add**
+      - **Important:** Copy the **Value** immediately (not the Secret ID) - this is your `MICROSOFT_CLIENT_SECRET`
+      - Add it to your `.env` file:
+        ```
+        MICROSOFT_CLIENT_SECRET=your_microsoft_client_secret_here
+        ```
+      - **Note:** The secret value is only shown once. If you lose it, you'll need to create a new one.
+
+   d. **Configure API Permissions:**
+      - Go to **API permissions** in your app registration
+      - Click **Add a permission** → **Microsoft Graph** → **Delegated permissions**
+      - Add the following permissions:
+        - `offline_access` - Maintain access to data you have given it access to
+        - `User.Read` - Sign in and read user profile
+        - `Calendars.Read` - Read user calendars
+      - Click **Add permissions**
+      - (Optional) If you're an admin, click **Grant admin consent for [Your Organization]**
+        - If you're not an admin, users will be prompted to consent when they first sign in
+
+   e. **Update config.js:**
+      - Copy `config.example.js` to `public/config.js` (if not already done)
+      - Add your Microsoft Client ID to the config:
+        ```javascript
+        window.__TIMEFUL_CONFIG__ = {
+          googleClientId: 'your_google_client_id',
+          microsoftClientId: 'your_microsoft_client_id',
+          // ... other settings
+        }
+        ```
+
+   **Important Notes:**
+   - The Microsoft OAuth credentials are separate from Google OAuth credentials
+   - Both are optional - you can use just Google, just Microsoft, or both
+   - If Microsoft credentials are not configured, the Outlook calendar integration button will show an error
+   - For production deployments, make sure to update the redirect URI in Azure Portal to match your domain
+   - Client secrets expire - set a reminder to renew them before expiration
+
 ### 4. Start the Application
 
 **Using the Makefile (recommended):**

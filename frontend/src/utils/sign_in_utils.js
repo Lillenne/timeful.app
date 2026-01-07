@@ -49,7 +49,15 @@ export const signInOutlook = ({
   state = {},
   requestCalendarPermission = false,
 }) => {
-  const clientId = "d27c1c46-4be7-45c4-ad98-626b2fa3a527"
+  const clientId = window.__TIMEFUL_CONFIG__?.microsoftClientId
+  
+  // Check if Microsoft client ID is configured
+  if (!clientId) {
+    console.error("Microsoft client ID not configured. Please set microsoftClientId in config.js")
+    alert("Outlook calendar integration is not configured. Please contact your administrator.")
+    return
+  }
+  
   const tenant = "common"
   const redirectUri = encodeURIComponent(`${window.location.origin}/auth`)
 

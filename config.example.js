@@ -4,6 +4,12 @@ window.__TIMEFUL_CONFIG__ = {
   // Get this from: https://console.cloud.google.com/apis/credentials
   googleClientId: '',
 
+  // Microsoft OAuth Client ID (optional - required for Outlook calendar integration)
+  // Must match the MICROSOFT_CLIENT_ID from your .env file
+  // Get this from: https://portal.azure.com/ -> Azure Active Directory -> App registrations
+  // Leave empty to disable Outlook calendar integration
+  microsoftClientId: '',
+
   // PostHog analytics API key (optional)
   // Leave empty to disable PostHog analytics
   // Get this from: https://posthog.com/

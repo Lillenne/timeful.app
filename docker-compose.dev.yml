@@ -45,6 +45,11 @@ services:
       # For full functionality, add your credentials in .env
       - CLIENT_ID=${CLIENT_ID:-}
       - CLIENT_SECRET=${CLIENT_SECRET:-}
+      
+      # Microsoft OAuth (Optional - for Outlook calendar integration)
+      - MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID:-}
+      - MICROSOFT_CLIENT_SECRET=${MICROSOFT_CLIENT_SECRET:-}
+      
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-dev_encryption_key_change_in_production}
       
       # Optional: Self-Hosted Premium (auto-unlock premium features)

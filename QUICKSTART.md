@@ -71,6 +71,25 @@ Add to `.env`:
 ENCRYPTION_KEY=your_generated_key_here
 ```
 
+### 3. Microsoft OAuth (Optional - for Outlook calendar integration)
+
+1. Go to [Azure Portal](https://portal.azure.com/)
+2. Navigate to **Azure Active Directory** → **App registrations** → **New registration**
+3. Configure:
+   - **Name:** `Timeful Self-Hosted`
+   - **Account types:** Multitenant + Personal
+   - **Redirect URI (Web):** `http://localhost:3002/auth`
+4. Copy **Application (client) ID** to `.env` as `MICROSOFT_CLIENT_ID`
+5. Go to **Certificates & secrets** → **New client secret**
+6. Copy secret **Value** to `.env` as `MICROSOFT_CLIENT_SECRET`
+7. Go to **API permissions** → Add these Microsoft Graph delegated permissions:
+   - `offline_access`
+   - `User.Read`
+   - `Calendars.Read`
+8. Update `public/config.js` with your `microsoftClientId`
+
+**Note:** If you skip this, Outlook calendar integration will not work, but Google Calendar will still function.
+
 ## 🎯 Common Commands
 
 | Action | Command | Description |
