@@ -54,6 +54,11 @@ else
     exit 1
 fi
 
+# Expected UIDs for verification
+BACKEND_UID="1000:1000"
+FRONTEND_UID="101:101"
+MONGODB_UID="999:999"
+
 # Check compose files for security options
 echo ""
 echo "Checking Docker Compose security options..."
@@ -61,12 +66,7 @@ echo "Checking Docker Compose security options..."
 check_in_file() {
     local file=$1
     local pattern=$2
-    
-    if grep -q "$pattern" "$file"; then
-        return 0
-    else
-        return 1
-    fi
+    grep -q "$pattern" "$file"
 }
 
 for file in docker-compose.yml docker-compose.dev.yml docker-compose.ghcr.yml; do
@@ -74,8 +74,10 @@ for file in docker-compose.yml docker-compose.dev.yml docker-compose.ghcr.yml; d
     echo "Checking $file..."
     
     # Check user directives
-    if check_in_file "$file" 'user: "1000:1000"' && check_in_file "$file" 'user: "101:101"' && check_in_file "$file" 'user: "999:999"'; then
-        echo -e "${GREEN}✓ All services have user directives (1000, 101, 999)${NC}"
+    if check_in_file "$file" "user: \"$BACKEND_UID\"" && \
+       check_in_file "$file" "user: \"$FRONTEND_UID\"" && \
+       check_in_file "$file" "user: \"$MONGODB_UID\""; then
+        echo -e "${GREEN}✓ All services have user directives ($BACKEND_UID, $FRONTEND_UID, $MONGODB_UID)${NC}"
     else
         echo -e "${RED}✗ Missing user directives${NC}"
         exit 1
@@ -105,7 +107,7 @@ echo "==================================="
 echo ""
 echo "Key Security Features Implemented:"
 echo "  • Non-root users in all containers"
-echo "  • User directives in compose files (1000:1000, 101:101, 999:999)"
+echo "  • User directives in compose files ($BACKEND_UID, $FRONTEND_UID, $MONGODB_UID)"
 echo "  • No-new-privileges security option"
 echo "  • Capability dropping (ALL) with minimal additions"
 echo "  • Compatible with rootless Docker/Podman"
