@@ -91,8 +91,15 @@ services:
     networks:
       - timeful-network
     environment:
-      # PostHog Analytics (optional)
-      - VUE_APP_POSTHOG_API_KEY=${VUE_APP_POSTHOG_API_KEY:-}
+      # Backend host and port for nginx proxy configuration
+      # These are substituted into nginx.conf at startup
+      # Default values work with Docker Compose networking
+      # Change these if using custom container names or external backend
+      - BACKEND_HOST=${BACKEND_HOST:-backend}
+      - BACKEND_PORT=${BACKEND_PORT:-3002}
+    volumes:
+      # Mount runtime configuration
+      - ./config.js:/usr/share/nginx/html/config.js
 
 networks:
   timeful-network:

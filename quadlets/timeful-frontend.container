@@ -14,8 +14,8 @@ AutoUpdate=registry
 Network=timeful.network
 PublishPort=3002:80
 
-# Environment (optional)
-Environment=VUE_APP_POSTHOG_API_KEY=${VUE_APP_POSTHOG_API_KEY:-}
+Environment=VUE_APP_GOOGLE_CLIENT_ID=
+Environment=VUE_APP_POSTHOG_API_KEY=
 
 [Service]
 Restart=unless-stopped
