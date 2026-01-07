@@ -86,7 +86,7 @@ ENCRYPTION_KEY=your_generated_key_here
    - `offline_access`
    - `User.Read`
    - `Calendars.Read`
-8. Update `public/config.js` with your `microsoftClientId`
+8. Copy `config.example.js` to `config.js` and update with your `microsoftClientId`
 
 **Note:** If you skip this, Outlook calendar integration will not work, but Google Calendar will still function.
 

@@ -187,7 +187,7 @@ Edit `.env` and configure the required settings:
         - If you're not an admin, users will be prompted to consent when they first sign in
 
    e. **Update config.js:**
-      - Copy `config.example.js` to `public/config.js` (if not already done)
+      - Copy `config.example.js` to `config.js` in the repository root
       - Add your Microsoft Client ID to the config:
         ```javascript
         window.__TIMEFUL_CONFIG__ = {
