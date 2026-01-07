@@ -150,6 +150,11 @@ func signInHelper(c *gin.Context, token auth.TokenResponse, tokenOrigin models.T
 		TokenOrigin:    tokenOrigin,
 	}
 
+	// Set IsPremium if self-hosted premium is enabled
+	if utils.IsSelfHostedPremiumEnabled() {
+		userData.IsPremium = utils.TruePtr()
+	}
+
 	calendarAccount := models.CalendarAccount{
 		CalendarType:       calendarType,
 		OAuth2CalendarAuth: &calendarAuth,

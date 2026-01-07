@@ -226,6 +226,27 @@ To enable premium features with payments:
 STRIPE_API_KEY=sk_live_your_stripe_key
 ```
 
+### Self-Hosted Premium Features
+
+**For self-hosted deployments**, you can automatically unlock premium features for all users without requiring Stripe integration:
+
+```env
+SELF_HOSTED_PREMIUM=true
+```
+
+**What this does:**
+- ✅ Automatically grants premium features to all users
+- ✅ No payment processing required
+- ✅ Perfect for organizations self-hosting for their teams
+- ✅ No Stripe API key needed
+
+**When to use:**
+- Self-hosting for your organization or team
+- Don't want to manage payments
+- Want all features available immediately
+
+**Note:** This setting defaults to `true` in the Docker Compose configurations. If you want to enable payment processing with Stripe, set `SELF_HOSTED_PREMIUM=false` and configure `STRIPE_API_KEY`.
+
 ## Docker Images
 
 ### Pre-built Images on GitHub Container Registry

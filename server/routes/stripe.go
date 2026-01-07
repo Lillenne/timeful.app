@@ -122,6 +122,15 @@ func getPrice(c *gin.Context) {
 		return
 	}
 
+	// Check if self-hosted premium is enabled
+	if utils.IsSelfHostedPremiumEnabled() {
+		c.JSON(http.StatusOK, gin.H{
+			"selfHostedPremium": true,
+			"message":           "Self-hosted premium is enabled. All users have premium features.",
+		})
+		return
+	}
+
 	// Get the experiment query parameter
 	exp := c.Query("exp")
 
