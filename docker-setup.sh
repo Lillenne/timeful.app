@@ -27,6 +27,19 @@ fi
 echo "✅ Docker and Docker Compose are installed"
 echo ""
 
+# Check if config.js file exists
+if [ ! -f config.js ]; then
+    echo "📝 Creating config.js file from template..."
+    cp config.example.js config.js
+    echo "✅ config.js file created"
+    echo ""
+    echo "⚠️  NOTE: You should edit config.js to add your OAuth client IDs after configuring .env"
+    echo ""
+else
+    echo "✅ config.js file already exists"
+    echo ""
+fi
+
 # Check if .env file exists
 if [ ! -f .env ]; then
     echo "📝 Creating .env file from template..."
@@ -41,6 +54,12 @@ if [ ! -f .env ]; then
     echo ""
     echo "2. Encryption key (ENCRYPTION_KEY)"
     echo "   - Generate with: openssl rand -base64 32"
+    echo ""
+    echo "3. (Optional) Microsoft OAuth credentials for Outlook calendar integration"
+    echo "   - MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET"
+    echo "   - Get them from: https://portal.azure.com/"
+    echo ""
+    echo "After editing .env, also update config.js with your client IDs."
     echo ""
     read -p "Press Enter to edit .env file now, or Ctrl+C to exit and edit it manually..."
     
