@@ -63,6 +63,8 @@ MONGODB_UID="999:999"
 echo ""
 echo "Checking Docker Compose security options..."
 
+# Check if a pattern exists in a file
+# Note: Uses strict pattern matching to ensure proper YAML formatting
 check_in_file() {
     local file=$1
     local pattern=$2
