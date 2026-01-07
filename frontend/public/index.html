@@ -6,6 +6,11 @@
       // Check cookie consent before loading tracking scripts
       function loadTrackingScripts() {
         try {
+          // Check if analytics is disabled via config
+          if (window.__TIMEFUL_CONFIG__?.disableAnalytics) {
+            return
+          }
+
           const consent = localStorage.getItem("cookieConsent")
           const consentData = consent ? JSON.parse(consent) : null
 
@@ -77,17 +82,24 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
+    <!-- Load runtime config -->
+    <script src="<%= BASE_URL %>config.js"></script>
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->
     <script>
       try {
-        const consent = localStorage.getItem("cookieConsent")
-        const consentData = consent ? JSON.parse(consent) : null
-        if (consentData?.preferences?.analytics) {
-          document.write(
-            '<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M677X6V" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>'
-          )
+        // Check if analytics is disabled
+        if (window.__TIMEFUL_CONFIG__?.disableAnalytics) {
+          // Skip GTM noscript
+        } else {
+          const consent = localStorage.getItem("cookieConsent")
+          const consentData = consent ? JSON.parse(consent) : null
+          if (consentData?.preferences?.analytics) {
+            document.write(
+              '<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M677X6V" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>'
+            )
+          }
         }
       } catch (error) {
         // Silent fail for noscript GTM
@@ -95,11 +107,7 @@
     </script>
     <!-- End Google Tag Manager (noscript) -->
     <noscript>
-      <strong
-        >We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work
-        properly without JavaScript enabled. Please enable it to
-        continue.</strong
-      >
+      <strong>We're sorry but Timeful doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
     <div id="app"></div>
     <!-- built files will be auto injected -->

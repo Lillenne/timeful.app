@@ -52,14 +52,24 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        - FRONTEND_PATH=frontend
     container_name: timeful-frontend-dev
     restart: unless-stopped
+    environment:
+      # Backend host and port for nginx proxy configuration
+      # Development defaults for Docker Compose
+      - BACKEND_HOST=${BACKEND_HOST:-backend}
+      - BACKEND_PORT=${BACKEND_PORT:-3002}
     ports:
       - "3002:80"
     depends_on:
       - backend
     networks:
       - timeful-dev-network
+    volumes:
+      # Mount runtime configuration
+      - ./config.js:/usr/share/nginx/html/config.js
 
 networks:
   timeful-dev-network:
