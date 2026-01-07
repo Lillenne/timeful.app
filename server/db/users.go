@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"schej.it/server/logger"
 	"schej.it/server/models"
+	"schej.it/server/utils"
 )
 
 // Returns a user based on their _id
@@ -31,6 +32,11 @@ func GetUserById(userId string) *models.User {
 		logger.StdErr.Panicln(err)
 	}
 
+	// Override isPremium if self-hosted premium is enabled
+	if utils.IsSelfHostedPremiumEnabled() {
+		user.IsPremium = utils.TruePtr()
+	}
+
 	return &user
 }
 
@@ -50,6 +56,11 @@ func GetUserByStripeCustomerId(stripeCustomerId string) *models.User {
 		logger.StdErr.Panicln(err)
 	}
 
+	// Override isPremium if self-hosted premium is enabled
+	if utils.IsSelfHostedPremiumEnabled() {
+		user.IsPremium = utils.TruePtr()
+	}
+
 	return &user
 }
 
@@ -66,6 +77,11 @@ func GetUserByEmail(email string) *models.User {
 	var user models.User
 	if err := result.Decode(&user); err != nil {
 		logger.StdErr.Panicln(err)
+	}
+
+	// Override isPremium if self-hosted premium is enabled
+	if utils.IsSelfHostedPremiumEnabled() {
+		user.IsPremium = utils.TruePtr()
 	}
 
 	return &user

@@ -59,6 +59,10 @@ services:
       # Optional: Stripe Configuration (for payments)
       - STRIPE_API_KEY=${STRIPE_API_KEY:-}
       
+      # Optional: Self-Hosted Premium (auto-unlock premium features)
+      # Set to "true" to enable premium features for all users without Stripe
+      - SELF_HOSTED_PREMIUM=${SELF_HOSTED_PREMIUM:-true}
+      
       # Optional: Google Cloud Service Account (for advanced features)
       - SERVICE_ACCOUNT_KEY_PATH=${SERVICE_ACCOUNT_KEY_PATH:-}
       

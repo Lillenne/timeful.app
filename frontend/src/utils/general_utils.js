@@ -217,12 +217,16 @@ export const lightOrDark = (color) => {
 export const isPremiumUser = (authUser) => {
   if (!authUser) return false
 
+  // Check isPremium field first (for self-hosted premium support)
+  if (authUser.isPremium !== null && authUser.isPremium !== undefined) {
+    return authUser.isPremium
+  }
+
+  // Legacy check: if user has Stripe customer ID, they're premium
   if (authUser.stripeCustomerId) {
-    if (authUser.isPremium !== null) {
-      return authUser.isPremium
-    }
     return true
   }
+  
   return false
 }
 

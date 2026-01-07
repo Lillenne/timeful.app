@@ -34,6 +34,9 @@ services:
       - CLIENT_SECRET=${CLIENT_SECRET:-}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-dev_encryption_key_change_in_production}
       
+      # Optional: Self-Hosted Premium (auto-unlock premium features)
+      - SELF_HOSTED_PREMIUM=${SELF_HOSTED_PREMIUM:-true}
+      
       # Optional: Development Base URL
       - BASE_URL=${BASE_URL:-http://localhost:3002}
       

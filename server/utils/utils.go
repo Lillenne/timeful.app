@@ -157,6 +157,13 @@ func FalsePtr() *bool {
 	return &b
 }
 
+// Returns whether self-hosted premium is enabled
+// When enabled, all users automatically get premium features
+func IsSelfHostedPremiumEnabled() bool {
+	value := os.Getenv("SELF_HOSTED_PREMIUM")
+	return value == "true" || value == "1" || value == "yes"
+}
+
 func GetCalendarAccountKey(email string, calendarType models.CalendarType) string {
 	return fmt.Sprintf("%s_%s", email, calendarType)
 }
