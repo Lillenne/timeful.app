@@ -204,7 +204,11 @@ CLIENT_ID=your_google_client_id
 CLIENT_SECRET=your_google_client_secret
 ENCRYPTION_KEY=your_encryption_key
 
-# Optional
+# Optional - Microsoft OAuth (for Outlook calendar integration)
+MICROSOFT_CLIENT_ID=your_microsoft_client_id
+MICROSOFT_CLIENT_SECRET=your_microsoft_client_secret
+
+# Optional - Other services
 GMAIL_APP_PASSWORD=
 SCHEJ_EMAIL_ADDRESS=
 STRIPE_API_KEY=

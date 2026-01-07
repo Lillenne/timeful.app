@@ -49,7 +49,17 @@ export const signInOutlook = ({
   state = {},
   requestCalendarPermission = false,
 }) => {
-  const clientId = "d27c1c46-4be7-45c4-ad98-626b2fa3a527"
+  const clientId = window.__TIMEFUL_CONFIG__?.microsoftClientId
+  
+  // Check if Microsoft client ID is configured
+  if (!clientId) {
+    console.error("Microsoft client ID not configured. Please set microsoftClientId in config.js")
+    // Note: Using alert here since this is called before navigation and outside component context.
+    // Consider enhancing with a proper notification system if this becomes common.
+    alert("Outlook calendar integration is not configured.\n\nPlease ask your administrator to:\n1. Create a Microsoft Entra ID app registration\n2. Configure MICROSOFT_CLIENT_ID in .env\n3. Set microsoftClientId in config.js")
+    return
+  }
+  
   const tenant = "common"
   const redirectUri = encodeURIComponent(`${window.location.origin}/auth`)
 

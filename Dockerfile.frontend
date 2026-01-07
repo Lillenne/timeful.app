@@ -12,13 +12,16 @@ RUN apk add --no-cache gettext
 
 # Create directories that nginx needs to write to and set permissions
 # nginx in alpine runs as user 'nginx' (uid 101) by default
-RUN mkdir -p /var/cache/nginx /var/run /var/log/nginx && \
-    chown -R nginx:nginx /var/cache/nginx /var/run /var/log/nginx && \
-    chmod -R 755 /var/cache/nginx /var/run /var/log/nginx
+RUN mkdir -p /var/cache/nginx /var/run /var/log/nginx /tmp/nginx && \
+    chown -R nginx:nginx /var/cache/nginx /var/run /var/log/nginx /tmp/nginx && \
+    chmod -R 755 /var/cache/nginx /var/run /var/log/nginx /tmp/nginx
 
 # Copy built files with proper ownership
 COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
 COPY --chown=nginx:nginx frontend/nginx.conf /etc/nginx/conf.d/default.conf.template
+
+# Create a custom nginx.conf that uses a writable PID location for non-root user
+RUN sed -i 's|pid        /run/nginx.pid;|pid        /tmp/nginx/nginx.pid;|g' /etc/nginx/nginx.conf
 
 # Entrypoint script to substitute only BACKEND_HOST and BACKEND_PORT variables
 # Make the script executable and owned by nginx user

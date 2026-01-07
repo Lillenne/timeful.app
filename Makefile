@@ -20,7 +20,7 @@ up: ## Start the application (build from source)
 	@echo "✅ Timeful is starting!"
 	@echo "Access the application at: http://localhost:3002"
 	@echo ""
-	@echo "📝 Remember to edit config.js to set your googleClientId"
+	@echo "📝 Remember to edit config.js to set your googleClientId and microsoftClientId (if using Outlook)"
 
 up-ghcr: ## Start using pre-built images from GHCR (recommended)
 	docker compose -f docker-compose.ghcr.yml up -d
@@ -28,7 +28,7 @@ up-ghcr: ## Start using pre-built images from GHCR (recommended)
 	@echo "✅ Timeful is starting with pre-built images!"
 	@echo "Access the application at: http://localhost:3002"
 	@echo ""
-	@echo "📝 Remember to edit config.js to set your googleClientId"
+	@echo "📝 Remember to edit config.js to set your googleClientId and microsoftClientId (if using Outlook)"
 
 down: ## Stop the application
 	docker compose down
