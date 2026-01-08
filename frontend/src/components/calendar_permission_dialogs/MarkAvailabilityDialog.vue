@@ -55,6 +55,14 @@
                 <v-spacer />
               </div>
             </v-btn>
+            <v-btn block @click="autofillWithICS" class="tw-bg-white">
+              <div class="tw-flex tw-w-full tw-items-center tw-gap-2">
+                <v-icon small class="tw-flex-initial">mdi-calendar-import</v-icon>
+                <v-spacer />
+                Import from ICS file or URL
+                <v-spacer />
+              </div>
+            </v-btn>
             <div class="tw-flex tw-items-center tw-gap-3">
               <v-divider />
               <div
@@ -91,6 +99,13 @@
           @addedAppleCalendar="$emit('addedAppleCalendar')"
         />
       </v-expand-transition>
+      <v-expand-transition>
+        <ICSImport
+          v-if="state === states.ICS_IMPORT"
+          @back="showChoices"
+          @eventsImported="handleICSImport"
+        />
+      </v-expand-transition>
     </v-card>
   </v-dialog>
 </template>
@@ -101,6 +116,7 @@ import { mapActions, mapState } from "vuex"
 import CalendarPermissionsCard from "./CalendarPermissionsCard"
 import CreateAccount from "./CreateAccount"
 import AppleCredentials from "./AppleCredentials"
+import ICSImport from "./ICSImport"
 
 export default {
   name: "MarkAvailabilityDialog",
@@ -114,6 +130,7 @@ export default {
     CalendarPermissionsCard,
     CreateAccount,
     AppleCredentials,
+    ICSImport,
   },
 
   data() {
@@ -123,6 +140,7 @@ export default {
         GCAL_PERMISSIONS: "gcal_permissions", // present to user the gcal permissions we request
         CREATE_ACCOUNT_APPLE: "create_account_apple", // present to user the create account dialog
         APPLE_CREDENTIALS: "apple_credentials", // present to user the apple credentials dialog
+        ICS_IMPORT: "ics_import", // present to user the ICS import dialog
       },
       state: this.initialState,
     }
@@ -155,6 +173,13 @@ export default {
     autofillWithOutlook() {
       this.$posthog.capture("autofill_with_outlook_clicked")
       this.$emit("allowOutlookCalendar")
+    },
+    autofillWithICS() {
+      this.$posthog.capture("autofill_with_ics_clicked")
+      this.state = this.states.ICS_IMPORT
+    },
+    handleICSImport(events) {
+      this.$emit("icsEventsImported", events)
     },
     showChoices() {
       this.state = this.states.CHOICES

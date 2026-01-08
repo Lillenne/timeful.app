@@ -139,6 +139,12 @@
                   <v-list-item-title>Outlook</v-list-item-title>
                 </v-list-item-content>
               </v-list-item>
+              <v-list-item @click="(e) => $emit('downloadICS', e)">
+                <v-icon small class="tw-mr-2 tw-flex-none">mdi-download</v-icon>
+                <v-list-item-content>
+                  <v-list-item-title>Download ICS file</v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
             </v-list>
           </v-menu>
         </template>

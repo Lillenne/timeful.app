@@ -17,6 +17,7 @@
         "
         @setAvailabilityManually="setAvailabilityManually"
         @addedAppleCalendar="addedAppleCalendar"
+        @icsEventsImported="handleICSImport"
       />
 
       <!-- Google sign in not supported dialog -->
@@ -679,6 +680,16 @@ export default {
       if (!this.scheduleOverlapComponent) return
 
       this.$nextTick(() => {
+        this.scheduleOverlapComponent.startEditing()
+      })
+      this.choiceDialog = false
+    },
+    handleICSImport(events) {
+      /* Handle ICS imported events and convert them to availability */
+      if (!this.scheduleOverlapComponent) return
+
+      this.$nextTick(() => {
+        this.scheduleOverlapComponent.setAvailabilityFromICSEvents(events)
         this.scheduleOverlapComponent.startEditing()
       })
       this.choiceDialog = false
