@@ -69,7 +69,7 @@ function validateCalendarURL(url) {
         hostname === '127.0.0.1' ||
         hostname.startsWith('192.168.') ||
         hostname.startsWith('10.') ||
-        hostname.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./)) {
+        hostname.match(/^172\.(1[6-9]|2[0-9]|3[01])\./)) {
       throw new Error("Private or local URLs are not allowed for security reasons")
     }
     
@@ -133,8 +133,13 @@ export function createICSFile(eventDetails) {
   event.startDate = ICAL.Time.fromJSDate(startDate, false)
   event.endDate = ICAL.Time.fromJSDate(endDate, false)
 
-  // Generate UID
-  const uid = `timeful-${Date.now()}-${Math.random().toString(36).substring(2, 11)}@timeful.app`
+  // Generate UID using crypto API if available, fallback to timestamp + random
+  let uid
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    uid = `timeful-${crypto.randomUUID()}@timeful.app`
+  } else {
+    uid = `timeful-${Date.now()}-${Math.random().toString(36).substring(2, 11)}@timeful.app`
+  }
   vevent.updatePropertyWithValue("uid", uid)
 
   // Set timestamp
