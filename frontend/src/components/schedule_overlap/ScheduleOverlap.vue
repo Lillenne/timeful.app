@@ -2761,18 +2761,10 @@ export default {
       this.availability = new Set()
       const tmpAvailability = this.getAvailabilityFromCalendarEvents({
         calendarEventsByDay: this.calendarEventsByDay,
-        calendarOptions: {
-          bufferTime: this.bufferTime,
-          workingHours: this.workingHours,
-        },
+        calendarOptions: this.getCurrentCalendarOptions(),
       })
 
-      const pageStartDate = getDateDayOffset(
-        new Date(this.event.dates[0]),
-        this.page * this.maxDaysPerPage
-      )
-      const pageEndDate = getDateDayOffset(pageStartDate, this.maxDaysPerPage)
-      this.animateAvailability(tmpAvailability, pageStartDate, pageEndDate)
+      this.animateAvailabilityForCurrentPage(tmpAvailability)
     },
     /** Set availability from ICS imported events */
     setAvailabilityFromICSEvents(events) {
@@ -2806,18 +2798,26 @@ export default {
       this.availability = new Set()
       const tmpAvailability = this.getAvailabilityFromCalendarEvents({
         calendarEventsByDay,
-        calendarOptions: {
-          bufferTime: this.bufferTime,
-          workingHours: this.workingHours,
-        },
+        calendarOptions: this.getCurrentCalendarOptions(),
       })
 
+      this.animateAvailabilityForCurrentPage(tmpAvailability)
+    },
+    /** Get current calendar options */
+    getCurrentCalendarOptions() {
+      return {
+        bufferTime: this.bufferTime,
+        workingHours: this.workingHours,
+      }
+    },
+    /** Animate availability for the current page */
+    animateAvailabilityForCurrentPage(availability) {
       const pageStartDate = getDateDayOffset(
         new Date(this.event.dates[0]),
         this.page * this.maxDaysPerPage
       )
       const pageEndDate = getDateDayOffset(pageStartDate, this.maxDaysPerPage)
-      this.animateAvailability(tmpAvailability, pageStartDate, pageEndDate)
+      this.animateAvailability(availability, pageStartDate, pageEndDate)
     },
     /** Animate the filling out of availability using setTimeout, between startDate and endDate */
     animateAvailability(availability, startDate, endDate) {

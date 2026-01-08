@@ -121,8 +121,7 @@ export default {
           // File upload
           icsContent = await this.readFile(this.file)
         } else {
-          // URL
-          // Convert webcal:// to https://
+          // URL - fetch calendar from provided URL
           let calendarUrl = this.url.trim()
           
           // Note: Direct fetch from client-side may fail due to CORS policies.

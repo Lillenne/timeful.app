@@ -34,7 +34,6 @@ export function parseICSFile(icsContent) {
         summary: event.summary || "Busy",
         startDate: event.startDate.toJSDate(),
         endDate: event.endDate.toJSDate(),
-        isAllDay: event.startDate.isDate,
       })
     }
 
