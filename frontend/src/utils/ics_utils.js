@@ -46,13 +46,51 @@ export function parseICSFile(icsContent) {
 }
 
 /**
+ * Validate and sanitize calendar URL
+ * @param {string} url - The URL to validate
+ * @returns {string} Validated URL
+ * @throws {Error} If URL is invalid or uses an unsupported protocol
+ */
+function validateCalendarURL(url) {
+  try {
+    // Convert webcal:// to https://
+    let sanitizedUrl = url.trim().replace(/^webcal:\/\//i, "https://")
+    
+    // Parse the URL
+    const urlObj = new URL(sanitizedUrl)
+    
+    // Only allow https and http protocols
+    if (!['https:', 'http:'].includes(urlObj.protocol)) {
+      throw new Error("Only https:// and http:// URLs are supported")
+    }
+    
+    // Don't allow localhost or private IP ranges for security
+    const hostname = urlObj.hostname.toLowerCase()
+    if (hostname === 'localhost' || 
+        hostname === '127.0.0.1' ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        hostname.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./)) {
+      throw new Error("Private or local URLs are not allowed for security reasons")
+    }
+    
+    return sanitizedUrl
+  } catch (error) {
+    throw new Error(`Invalid calendar URL: ${error.message}`)
+  }
+}
+
+/**
  * Fetch ICS content from a URL
  * @param {string} url - The URL to fetch the ICS file from
  * @returns {Promise<string>} The ICS file content
  */
 export async function fetchICSFromURL(url) {
   try {
-    const response = await fetch(url)
+    // Validate URL first
+    const validatedUrl = validateCalendarURL(url)
+    
+    const response = await fetch(validatedUrl)
     if (!response.ok) {
       throw new Error(`Failed to fetch calendar: ${response.statusText}`)
     }
@@ -97,7 +135,7 @@ export function createICSFile(eventDetails) {
   event.endDate = ICAL.Time.fromJSDate(endDate, false)
 
   // Generate UID
-  const uid = `timeful-${Date.now()}-${Math.random().toString(36).substr(2, 9)}@timeful.app`
+  const uid = `timeful-${Date.now()}-${Math.random().toString(36).substring(2, 11)}@timeful.app`
   vevent.updatePropertyWithValue("uid", uid)
 
   // Set timestamp
