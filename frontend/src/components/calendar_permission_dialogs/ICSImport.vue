@@ -124,9 +124,13 @@ export default {
           // URL - fetch calendar from provided URL
           let calendarUrl = this.url.trim()
           
-          // Note: Direct fetch from client-side may fail due to CORS policies.
-          // For production use, consider implementing a backend proxy endpoint
-          // that fetches the ICS file server-side to avoid CORS and SSRF issues.
+          // IMPORTANT: Client-side URL fetching has significant limitations:
+          // 1. CORS policies will block most calendar URLs that don't explicitly allow cross-origin requests
+          // 2. For production use, implement a backend proxy endpoint to:
+          //    - Fetch ICS files server-side (avoiding CORS)
+          //    - Provide better security controls and rate limiting
+          //    - Cache responses for better performance
+          // 3. Consider providing better user guidance about CORS limitations
           try {
             icsContent = await fetchICSFromURL(calendarUrl)
           } catch (err) {

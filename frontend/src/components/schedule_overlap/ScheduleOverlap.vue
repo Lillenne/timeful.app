@@ -3665,7 +3665,7 @@ export default {
       })
 
       // Download the ICS file
-      const filename = `${this.event.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`
+      const filename = `${this.event.name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim()}.ics`
       downloadICSFile(icsContent, filename)
 
       this.$posthog.capture("schedule_event_ics_downloaded")
