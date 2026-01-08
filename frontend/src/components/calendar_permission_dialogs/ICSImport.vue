@@ -123,10 +123,11 @@ export default {
         } else {
           // URL
           // Convert webcal:// to https://
-          let calendarUrl = this.url.replace(/^webcal:\/\//i, "https://")
+          let calendarUrl = this.url.trim()
           
-          // For security, we need to proxy the request through our backend
-          // to avoid CORS issues
+          // Note: Direct fetch from client-side may fail due to CORS policies.
+          // For production use, consider implementing a backend proxy endpoint
+          // that fetches the ICS file server-side to avoid CORS and SSRF issues.
           try {
             icsContent = await fetchICSFromURL(calendarUrl)
           } catch (err) {

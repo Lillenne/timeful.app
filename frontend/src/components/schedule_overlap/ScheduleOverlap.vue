@@ -3668,18 +3668,11 @@ export default {
       const filename = `${this.event.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`
       downloadICSFile(icsContent, filename)
 
-      // Optionally open email client with mailto link
-      if (emails.length > 0) {
-        const subject = `Invitation: ${this.event.name}`
-        const body = `You're invited to ${this.event.name}.\n\nPlease open the attached .ics file to add this event to your calendar.`
-        const mailtoUrl = createMailtoWithICS(icsContent, subject, body)
-        
-        // Ask user if they want to open email client
-        setTimeout(() => {
-          if (confirm("Would you like to open your email client to send this invitation?")) {
-            window.open(mailtoUrl, "_blank")
-          }
-        }, 500)
+      this.$posthog.capture("schedule_event_ics_downloaded")
+
+      // Show success message
+      if (this.showSnackbar) {
+        this.showInfo("Event downloaded as ICS file! You can now attach it to an email or add it to your calendar.")
       }
 
       // Reset state
