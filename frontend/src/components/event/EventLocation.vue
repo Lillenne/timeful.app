@@ -54,7 +54,9 @@
           placeholder="Enter a location..."
           class="tw-flex-grow tw-p-2 tw-text-xs sm:tw-text-sm"
           autofocus
-          hide-details
+          hide-details="auto"
+          counter="500"
+          maxlength="500"
         ></v-text-field>
         <v-btn
           icon
@@ -135,7 +137,6 @@ export default {
 
       const eventPayload = {
         name: this.event.name,
-        description: this.event.description,
         duration: this.event.duration,
         dates: this.event.dates,
         type: this.event.type,
