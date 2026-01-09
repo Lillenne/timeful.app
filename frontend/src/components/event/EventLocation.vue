@@ -135,6 +135,7 @@ export default {
 
       const eventPayload = {
         name: this.event.name,
+        description: this.event.description,
         duration: this.event.duration,
         dates: this.event.dates,
         type: this.event.type,
@@ -163,10 +164,21 @@ export default {
       if (!mapContainer) return
 
       // Use Nominatim to geocode the address
+      // Following Nominatim usage policy: https://operations.osmfoundation.org/policies/nominatim/
       fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${location}`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${location}`,
+        {
+          headers: {
+            'User-Agent': 'Timeful.app (https://timeful.app)'
+          }
+        }
       )
-        .then((response) => response.json())
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Geocoding failed: ${response.status}`)
+          }
+          return response.json()
+        })
         .then((data) => {
           if (data && data.length > 0) {
             const { lat, lon } = data[0]
@@ -179,6 +191,8 @@ export default {
             iframe.scrolling = "no"
             iframe.marginHeight = "0"
             iframe.marginWidth = "0"
+            iframe.sandbox = "allow-scripts allow-same-origin"
+            iframe.referrerPolicy = "no-referrer"
             iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${
               lon - 0.01
             },${lat - 0.01},${lon + 0.01},${
@@ -192,6 +206,7 @@ export default {
         })
         .catch((err) => {
           console.error("Error geocoding location:", err)
+          // Silently fail - user can still see the location text
         })
     },
   },
