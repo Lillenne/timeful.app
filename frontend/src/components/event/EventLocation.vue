@@ -2,15 +2,37 @@
   <div class="tw-mt-1 tw-max-w-full sm:tw-mt-2 sm:tw-max-w-[calc(100%-236px)]">
     <div
       v-if="showLocation"
-      class="tw-flex tw-w-full tw-cursor-pointer tw-flex-col tw-gap-2 tw-rounded-md tw-border tw-border-light-gray-stroke tw-bg-light-gray tw-p-2 tw-text-xs tw-font-normal tw-text-very-dark-gray hover:tw-bg-[#eeeeee] sm:tw-text-sm"
+      class="tw-flex tw-w-full tw-flex-col tw-gap-2 tw-rounded-md tw-border tw-border-light-gray-stroke tw-bg-light-gray tw-p-2 tw-text-xs tw-font-normal tw-text-very-dark-gray sm:tw-text-sm"
     >
       <div class="tw-flex tw-items-start tw-gap-2">
         <v-icon small class="tw-mt-0.5">mdi-map-marker</v-icon>
-        <div class="tw-grow">
+        <div class="tw-grow tw-cursor-pointer" @click="toggleMapExpanded">
           <div class="tw-min-h-6 tw-leading-6">
             {{ event.location }}
           </div>
         </div>
+        <v-btn
+          v-if="showMap && !mapExpanded"
+          key="expand-map-btn"
+          class="-tw-my-1"
+          icon
+          small
+          @click="toggleMapExpanded"
+          title="Show map"
+        >
+          <v-icon small>mdi-chevron-down</v-icon>
+        </v-btn>
+        <v-btn
+          v-else-if="showMap && mapExpanded"
+          key="collapse-map-btn"
+          class="-tw-my-1"
+          icon
+          small
+          @click="toggleMapExpanded"
+          title="Hide map"
+        >
+          <v-icon small>mdi-chevron-up</v-icon>
+        </v-btn>
         <v-btn
           v-if="canEdit"
           key="edit-location-btn"
@@ -18,17 +40,20 @@
           icon
           small
           @click="isEditing = true"
+          title="Edit location"
         >
           <v-icon small>mdi-pencil</v-icon>
         </v-btn>
       </div>
 
-      <!-- Map view - Always render container but hide until ready -->
-      <div
-        v-show="showMap"
-        class="tw-mt-2 tw-h-48 tw-w-full tw-overflow-hidden tw-rounded"
-        :id="mapId"
-      ></div>
+      <!-- Map view - Collapsible, starts minimized -->
+      <v-expand-transition>
+        <div
+          v-show="showMap && mapExpanded"
+          class="tw-h-48 tw-w-full tw-overflow-hidden tw-rounded"
+          :id="mapId"
+        ></div>
+      </v-expand-transition>
     </div>
 
     <v-btn
@@ -108,6 +133,7 @@ export default {
       isEditing: false,
       newLocation: this.event.location ?? "",
       showMap: false,
+      mapExpanded: false, // Map starts collapsed
       mapId: `map-${Math.random().toString(36).substring(7)}`,
     }
   },
@@ -147,6 +173,10 @@ export default {
 
   methods: {
     ...mapActions(["showError"]),
+    toggleMapExpanded() {
+      this.mapExpanded = !this.mapExpanded
+      console.log('[EventLocation] Map toggled:', this.mapExpanded ? 'expanded' : 'collapsed')
+    },
     saveLocation() {
       const oldEvent = { ...this.event }
 
