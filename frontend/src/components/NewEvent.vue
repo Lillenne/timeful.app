@@ -59,6 +59,22 @@
           required
         />
 
+        <v-textarea
+          v-model="description"
+          placeholder="Add a description (optional)..."
+          hide-details="auto"
+          solo
+          rows="2"
+          auto-grow
+        />
+
+        <v-text-field
+          v-model="location"
+          placeholder="Add a location (optional)..."
+          hide-details="auto"
+          solo
+        />
+
         <SlideToggle
           v-if="daysOnlyEnabled && !edit"
           class="tw-w-full"
@@ -516,6 +532,8 @@ export default {
   data: () => ({
     formValid: true,
     name: "",
+    description: "",
+    location: "",
     startTime: 9,
     endTime: 17,
     specificTimesEnabled: false,
@@ -638,6 +656,8 @@ export default {
     },
     reset() {
       this.name = ""
+      this.description = ""
+      this.location = ""
       this.startTime = 9
       this.endTime = 17
       this.specificTimesEnabled = false
@@ -722,6 +742,8 @@ export default {
 
       const payload = {
         name: this.name,
+        description: this.description || null,
+        location: this.location || null,
         duration: duration,
         dates: dates,
         hasSpecificTimes: this.specificTimesEnabled,
@@ -868,6 +890,8 @@ export default {
     updateFieldsFromEvent() {
       if (this.event) {
         this.name = this.event.name
+        this.description = this.event.description || ""
+        this.location = this.event.location || ""
 
         // Set start time, accounting for the timezone
         this.startTime = Math.floor(
