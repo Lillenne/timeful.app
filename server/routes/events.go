@@ -45,7 +45,7 @@ func InitEvents(router *gin.RouterGroup) {
 // @Tags events
 // @Accept json
 // @Produce json
-// @Param payload body object{name=string,duration=float32,dates=[]string,type=models.EventType,isSignUpForm=bool,signUpBlocks=[]models.SignUpBlock,notificationsEnabled=bool,blindAvailabilityEnabled=bool,daysOnly=bool,remindees=[]string,sendEmailAfterXResponses=int,when2meetHref=string,timeIncrement=int,attendees=[]string} true "Object containing info about the event to create"
+// @Param payload body object{name=string,description=string,location=string,duration=float32,dates=[]string,type=models.EventType,isSignUpForm=bool,signUpBlocks=[]models.SignUpBlock,notificationsEnabled=bool,blindAvailabilityEnabled=bool,daysOnly=bool,remindees=[]string,sendEmailAfterXResponses=int,when2meetHref=string,timeIncrement=int,attendees=[]string} true "Object containing info about the event to create"
 // @Success 201 {object} object{eventId=string}
 // @Router /events [post]
 func createEvent(c *gin.Context) {
@@ -62,6 +62,10 @@ func createEvent(c *gin.Context) {
 
 		// PostHog ID for the event creator
 		CreatorPosthogId *string `json:"creatorPosthogId"`
+
+		// For both events and groups
+		Description *string `json:"description"`
+		Location    *string `json:"location"`
 
 		// Only for sign up form events
 		IsSignUpForm *bool                 `json:"isSignUpForm"`
@@ -106,6 +110,8 @@ func createEvent(c *gin.Context) {
 		OwnerId:                  ownerId,
 		CreatorPosthogId:         payload.CreatorPosthogId,
 		Name:                     payload.Name,
+		Description:              payload.Description,
+		Location:                 payload.Location,
 		Duration:                 payload.Duration,
 		Dates:                    payload.Dates,
 		HasSpecificTimes:         payload.HasSpecificTimes,
@@ -232,7 +238,7 @@ func createEvent(c *gin.Context) {
 // @Tags events
 // @Produce json
 // @Param eventId path string true "Event ID"
-// @Param payload body object{name=string,description=string,duration=float32,dates=[]string,type=models.EventType,signUpBlocks=[]models.SignUpBlock,notificationsEnabled=bool,blindAvailabilityEnabled=bool,daysOnly=bool,remindees=[]string,sendEmailAfterXResponses=int,attendees=[]string} true "Object containing info about the event to update"
+// @Param payload body object{name=string,description=string,location=string,duration=float32,dates=[]string,type=models.EventType,signUpBlocks=[]models.SignUpBlock,notificationsEnabled=bool,blindAvailabilityEnabled=bool,daysOnly=bool,remindees=[]string,sendEmailAfterXResponses=int,attendees=[]string} true "Object containing info about the event to update"
 // @Success 200
 // @Router /events/{eventId} [put]
 func editEvent(c *gin.Context) {
@@ -249,6 +255,7 @@ func editEvent(c *gin.Context) {
 
 		// For both events and groups
 		Description *string `json:"description"`
+		Location    *string `json:"location"`
 
 		// Only for sign up form events
 		SignUpBlocks *[]models.SignUpBlock `json:"signUpBlocks"`
@@ -299,6 +306,7 @@ func editEvent(c *gin.Context) {
 	// Update event
 	event.Name = payload.Name
 	event.Description = payload.Description
+	event.Location = payload.Location
 	event.Duration = payload.Duration
 	event.Dates = payload.Dates
 	event.Times = payload.Times
