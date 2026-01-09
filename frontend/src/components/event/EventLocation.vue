@@ -23,9 +23,9 @@
         </v-btn>
       </div>
 
-      <!-- Map view -->
+      <!-- Map view - Always render container but hide until ready -->
       <div
-        v-if="showMap"
+        v-show="showMap"
         class="tw-mt-2 tw-h-48 tw-w-full tw-overflow-hidden tw-rounded"
         :id="mapId"
       ></div>
@@ -92,6 +92,15 @@ export default {
       type: Boolean,
       required: true,
     },
+  },
+
+  mounted() {
+    console.log('[EventLocation] Component mounted', {
+      hasLocation: !!this.event.location,
+      location: this.event.location,
+      canEdit: this.canEdit,
+      mapId: this.mapId
+    })
   },
 
   data() {
@@ -166,7 +175,22 @@ export default {
       })
     },
     initMap() {
-      if (!this.event.location || this.showMap) return
+      console.log('[EventLocation] initMap called', {
+        hasLocation: !!this.event.location,
+        location: this.event.location,
+        showMap: this.showMap,
+        mapId: this.mapId
+      })
+
+      if (!this.event.location) {
+        console.log('[EventLocation] No location provided, skipping map initialization')
+        return
+      }
+
+      if (this.showMap) {
+        console.log('[EventLocation] Map already showing, skipping re-initialization')
+        return
+      }
 
       // Simple OpenStreetMap embed using Leaflet
       // For now, we'll use a simpler approach with an iframe to OSM
@@ -174,7 +198,12 @@ export default {
 
       // Create a simple map container with OpenStreetMap
       const mapContainer = document.getElementById(this.mapId)
-      if (!mapContainer) return
+      if (!mapContainer) {
+        console.error('[EventLocation] Map container not found:', this.mapId)
+        return
+      }
+
+      console.log('[EventLocation] Geocoding address:', this.event.location)
 
       // Use Nominatim to geocode the address
       // Following Nominatim usage policy: https://operations.osmfoundation.org/policies/nominatim/
@@ -194,8 +223,11 @@ export default {
           return response.json()
         })
         .then((data) => {
+          console.log('[EventLocation] Geocoding response:', data)
+          
           if (data && data.length > 0) {
             const { lat, lon } = data[0]
+            console.log('[EventLocation] Creating map at coordinates:', { lat, lon })
 
             // Create an OpenStreetMap embed
             // sandbox with allow-same-origin and allow-scripts is needed for the map to function
@@ -218,10 +250,13 @@ export default {
             mapContainer.innerHTML = ""
             mapContainer.appendChild(iframe)
             this.showMap = true
+            console.log('[EventLocation] Map initialized successfully')
+          } else {
+            console.warn('[EventLocation] No geocoding results found for:', this.event.location)
           }
         })
         .catch((err) => {
-          console.error("Error geocoding location:", err)
+          console.error('[EventLocation] Error geocoding location:', err)
           // Silently fail - user can still see the location text
         })
     },
