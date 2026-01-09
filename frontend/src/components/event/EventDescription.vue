@@ -121,6 +121,7 @@ export default {
         dates: this.event.dates,
         type: this.event.type,
         description: this.newDescription,
+        location: this.event.location,
       }
       
       this.$emit("update:event", newEvent)
