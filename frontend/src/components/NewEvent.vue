@@ -66,6 +66,8 @@
           solo
           rows="2"
           auto-grow
+          counter="5000"
+          maxlength="5000"
         />
 
         <v-text-field
@@ -73,6 +75,8 @@
           placeholder="Add a location (optional)..."
           hide-details="auto"
           solo
+          counter="500"
+          maxlength="500"
         />
 
         <SlideToggle
