@@ -23,6 +23,76 @@ import (
 	"schej.it/server/utils"
 )
 
+// CreateEventRequest represents the request body for creating a new event
+type CreateEventRequest struct {
+	// Required parameters
+	Name     string               `json:"name" binding:"required"`
+	Duration *float32             `json:"duration" binding:"required"`
+	Dates    []primitive.DateTime `json:"dates" binding:"required"`
+	Type     models.EventType     `json:"type" binding:"required"`
+
+	// Only for specific times for specific dates events
+	HasSpecificTimes *bool                `json:"hasSpecificTimes"`
+	Times            []primitive.DateTime `json:"times"`
+
+	// PostHog ID for the event creator
+	CreatorPosthogId *string `json:"creatorPosthogId"`
+
+	// For both events and groups
+	Description *string `json:"description"`
+	Location    *string `json:"location"`
+
+	// Only for sign up form events
+	IsSignUpForm *bool                 `json:"isSignUpForm"`
+	SignUpBlocks *[]models.SignUpBlock `json:"signUpBlocks"`
+
+	// Only for events (not groups)
+	StartOnMonday            *bool    `json:"startOnMonday"`
+	NotificationsEnabled     *bool    `json:"notificationsEnabled"`
+	BlindAvailabilityEnabled *bool    `json:"blindAvailabilityEnabled"`
+	DaysOnly                 *bool    `json:"daysOnly"`
+	Remindees                []string `json:"remindees"`
+	SendEmailAfterXResponses *int     `json:"sendEmailAfterXResponses"`
+	When2meetHref            *string  `json:"when2meetHref"`
+	CollectEmails            *bool    `json:"collectEmails"`
+	TimeIncrement            *int     `json:"timeIncrement"`
+
+	// Only for availability groups
+	Attendees []string `json:"attendees"`
+}
+
+// EditEventRequest represents the request body for editing an event
+type EditEventRequest struct {
+	// Required parameters
+	Name     string               `json:"name" binding:"required"`
+	Duration *float32             `json:"duration" binding:"required"`
+	Dates    []primitive.DateTime `json:"dates" binding:"required"`
+	Type     models.EventType     `json:"type" binding:"required"`
+
+	// Only for specific times for specific dates events
+	HasSpecificTimes *bool                `json:"hasSpecificTimes"`
+	Times            []primitive.DateTime `json:"times"`
+
+	// For both events and groups
+	Description *string `json:"description"`
+	Location    *string `json:"location"`
+
+	// Only for sign up form events
+	SignUpBlocks *[]models.SignUpBlock `json:"signUpBlocks"`
+
+	// Only for events (not groups)
+	StartOnMonday            *bool    `json:"startOnMonday"`
+	NotificationsEnabled     *bool    `json:"notificationsEnabled"`
+	BlindAvailabilityEnabled *bool    `json:"blindAvailabilityEnabled"`
+	DaysOnly                 *bool    `json:"daysOnly"`
+	Remindees                []string `json:"remindees"`
+	SendEmailAfterXResponses *int     `json:"sendEmailAfterXResponses"`
+	CollectEmails            *bool    `json:"collectEmails"`
+
+	// Only for availability groups
+	Attendees []string `json:"attendees"`
+}
+
 func InitEvents(router *gin.RouterGroup) {
 	eventRouter := router.Group("/events")
 
@@ -45,46 +115,11 @@ func InitEvents(router *gin.RouterGroup) {
 // @Tags events
 // @Accept json
 // @Produce json
-// @Param payload body object{name=string,description=string,location=string,duration=float32,dates=[]string,type=models.EventType,isSignUpForm=bool,signUpBlocks=[]models.SignUpBlock,notificationsEnabled=bool,blindAvailabilityEnabled=bool,daysOnly=bool,remindees=[]string,sendEmailAfterXResponses=int,when2meetHref=string,timeIncrement=int,attendees=[]string} true "Object containing info about the event to create"
+// @Param payload body CreateEventRequest true "Object containing info about the event to create"
 // @Success 201 {object} object{eventId=string}
 // @Router /events [post]
 func createEvent(c *gin.Context) {
-	payload := struct {
-		// Required parameters
-		Name     string               `json:"name" binding:"required"`
-		Duration *float32             `json:"duration" binding:"required"`
-		Dates    []primitive.DateTime `json:"dates" binding:"required"`
-		Type     models.EventType     `json:"type" binding:"required"`
-
-		// Only for specific times for specific dates events
-		HasSpecificTimes *bool                `json:"hasSpecificTimes"`
-		Times            []primitive.DateTime `json:"times"`
-
-		// PostHog ID for the event creator
-		CreatorPosthogId *string `json:"creatorPosthogId"`
-
-		// For both events and groups
-		Description *string `json:"description"`
-		Location    *string `json:"location"`
-
-		// Only for sign up form events
-		IsSignUpForm *bool                 `json:"isSignUpForm"`
-		SignUpBlocks *[]models.SignUpBlock `json:"signUpBlocks"`
-
-		// Only for events (not groups)
-		StartOnMonday            *bool    `json:"startOnMonday"`
-		NotificationsEnabled     *bool    `json:"notificationsEnabled"`
-		BlindAvailabilityEnabled *bool    `json:"blindAvailabilityEnabled"`
-		DaysOnly                 *bool    `json:"daysOnly"`
-		Remindees                []string `json:"remindees"`
-		SendEmailAfterXResponses *int     `json:"sendEmailAfterXResponses"`
-		When2meetHref            *string  `json:"when2meetHref"`
-		CollectEmails            *bool    `json:"collectEmails"`
-		TimeIncrement            *int     `json:"timeIncrement"`
-
-		// Only for availability groups
-		Attendees []string `json:"attendees"`
-	}{}
+	var payload CreateEventRequest
 	if err := c.Bind(&payload); err != nil {
 		fmt.Println(err)
 		return
@@ -249,40 +284,11 @@ func createEvent(c *gin.Context) {
 // @Tags events
 // @Produce json
 // @Param eventId path string true "Event ID"
-// @Param payload body object{name=string,description=string,location=string,duration=float32,dates=[]string,type=models.EventType,signUpBlocks=[]models.SignUpBlock,notificationsEnabled=bool,blindAvailabilityEnabled=bool,daysOnly=bool,remindees=[]string,sendEmailAfterXResponses=int,attendees=[]string} true "Object containing info about the event to update"
+// @Param payload body EditEventRequest true "Object containing info about the event to update"
 // @Success 200
 // @Router /events/{eventId} [put]
 func editEvent(c *gin.Context) {
-	payload := struct {
-		// Required parameters
-		Name     string               `json:"name" binding:"required"`
-		Duration *float32             `json:"duration" binding:"required"`
-		Dates    []primitive.DateTime `json:"dates" binding:"required"`
-		Type     models.EventType     `json:"type" binding:"required"`
-
-		// Only for specific times for specific dates events
-		HasSpecificTimes *bool                `json:"hasSpecificTimes"`
-		Times            []primitive.DateTime `json:"times"`
-
-		// For both events and groups
-		Description *string `json:"description"`
-		Location    *string `json:"location"`
-
-		// Only for sign up form events
-		SignUpBlocks *[]models.SignUpBlock `json:"signUpBlocks"`
-
-		// Only for events (not groups)
-		StartOnMonday            *bool    `json:"startOnMonday"`
-		NotificationsEnabled     *bool    `json:"notificationsEnabled"`
-		BlindAvailabilityEnabled *bool    `json:"blindAvailabilityEnabled"`
-		DaysOnly                 *bool    `json:"daysOnly"`
-		Remindees                []string `json:"remindees"`
-		SendEmailAfterXResponses *int     `json:"sendEmailAfterXResponses"`
-		CollectEmails            *bool    `json:"collectEmails"`
-
-		// Only for availability groups
-		Attendees []string `json:"attendees"`
-	}{}
+	var payload EditEventRequest
 	if err := c.Bind(&payload); err != nil {
 		logger.StdErr.Println(err)
 		return

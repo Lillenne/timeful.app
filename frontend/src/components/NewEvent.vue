@@ -70,7 +70,7 @@
           maxlength="5000"
         />
 
-        <v-text-field
+        <LocationAutocomplete
           v-model="location"
           placeholder="Add a location (optional)..."
           hide-details="auto"
@@ -504,6 +504,7 @@ import dayjs from "dayjs"
 import utcPlugin from "dayjs/plugin/utc"
 import timezonePlugin from "dayjs/plugin/timezone"
 import ExpandableSection from "./ExpandableSection.vue"
+import LocationAutocomplete from "./LocationAutocomplete.vue"
 dayjs.extend(utcPlugin)
 dayjs.extend(timezonePlugin)
 
@@ -531,6 +532,7 @@ export default {
     ExpandableSection,
     AlertText,
     OverflowGradient,
+    LocationAutocomplete,
   },
 
   data: () => ({
