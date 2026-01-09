@@ -174,7 +174,7 @@ export default {
         })
       })
     },
-    initMap() {
+    async initMap() {
       console.log('[EventLocation] initMap called', {
         hasLocation: !!this.event.location,
         location: this.event.location,
@@ -194,7 +194,7 @@ export default {
 
       // Simple OpenStreetMap embed using Leaflet
       // For now, we'll use a simpler approach with an iframe to OSM
-      const location = encodeURIComponent(this.event.location)
+      const location = this.event.location
 
       // Create a simple map container with OpenStreetMap
       const mapContainer = document.getElementById(this.mapId)
@@ -205,60 +205,85 @@ export default {
 
       console.log('[EventLocation] Geocoding address:', this.event.location)
 
-      // Use Nominatim to geocode the address
-      // Following Nominatim usage policy: https://operations.osmfoundation.org/policies/nominatim/
-      // User-Agent header is required by Nominatim to identify the application
-      fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${location}`,
-        {
-          headers: {
-            'User-Agent': 'Timeful.app (https://timeful.app)'
+      try {
+        // Use Nominatim to geocode the address
+        // Following Nominatim usage policy: https://operations.osmfoundation.org/policies/nominatim/
+        // User-Agent header is required by Nominatim to identify the application
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`,
+          {
+            headers: {
+              'User-Agent': 'Timeful/1.0 (https://timeful.app)'
+            }
+          }
+        )
+
+        if (!response.ok) {
+          throw new Error(`Geocoding failed: ${response.status}`)
+        }
+
+        let data = await response.json()
+        console.log('[EventLocation] Geocoding response:', data)
+
+        // If no results, try with simplified address (remove suite/apartment numbers)
+        if (!data || data.length === 0) {
+          const simplifiedAddress = location
+            .replace(/Suite \d+,?\s*/i, '')
+            .replace(/Apt\.? \d+,?\s*/i, '')
+            .replace(/#\d+,?\s*/i, '')
+          
+          if (simplifiedAddress !== location) {
+            console.log('[EventLocation] Retrying with simplified address:', simplifiedAddress)
+            const retryResponse = await fetch(
+              `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(simplifiedAddress)}`,
+              {
+                headers: {
+                  'User-Agent': 'Timeful/1.0 (https://timeful.app)'
+                }
+              }
+            )
+            
+            if (retryResponse.ok) {
+              data = await retryResponse.json()
+              console.log('[EventLocation] Simplified geocoding response:', data)
+            }
           }
         }
-      )
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`Geocoding failed: ${response.status}`)
-          }
-          return response.json()
-        })
-        .then((data) => {
-          console.log('[EventLocation] Geocoding response:', data)
-          
-          if (data && data.length > 0) {
-            const { lat, lon } = data[0]
-            console.log('[EventLocation] Creating map at coordinates:', { lat, lon })
+        
+        if (data && data.length > 0) {
+          const lat = parseFloat(data[0].lat)
+          const lon = parseFloat(data[0].lon)
+          console.log('[EventLocation] Creating map at coordinates:', { lat, lon })
 
-            // Create an OpenStreetMap embed
-            // sandbox with allow-same-origin and allow-scripts is needed for the map to function
-            // This is safe because we're loading from the trusted openstreetmap.org domain
-            const iframe = document.createElement("iframe")
-            iframe.width = "100%"
-            iframe.height = "100%"
-            iframe.frameBorder = "0"
-            iframe.scrolling = "no"
-            iframe.marginHeight = "0"
-            iframe.marginWidth = "0"
-            iframe.sandbox = "allow-scripts allow-same-origin"
-            iframe.referrerPolicy = "no-referrer"
-            iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${
-              lon - 0.01
-            },${lat - 0.01},${lon + 0.01},${
-              lat + 0.01
-            }&layer=mapnik&marker=${lat},${lon}`
+          // Create an OpenStreetMap embed
+          // sandbox with allow-same-origin and allow-scripts is needed for the map to function
+          // This is safe because we're loading from the trusted openstreetmap.org domain
+          const iframe = document.createElement("iframe")
+          iframe.width = "100%"
+          iframe.height = "100%"
+          iframe.frameBorder = "0"
+          iframe.scrolling = "no"
+          iframe.marginHeight = "0"
+          iframe.marginWidth = "0"
+          iframe.sandbox = "allow-scripts allow-same-origin"
+          iframe.referrerPolicy = "no-referrer"
+          iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${
+            lon - 0.01
+          },${lat - 0.01},${lon + 0.01},${
+            lat + 0.01
+          }&layer=mapnik&marker=${lat},${lon}`
 
-            mapContainer.innerHTML = ""
-            mapContainer.appendChild(iframe)
-            this.showMap = true
-            console.log('[EventLocation] Map initialized successfully')
-          } else {
-            console.warn('[EventLocation] No geocoding results found for:', this.event.location)
-          }
-        })
-        .catch((err) => {
-          console.error('[EventLocation] Error geocoding location:', err)
-          // Silently fail - user can still see the location text
-        })
+          mapContainer.innerHTML = ""
+          mapContainer.appendChild(iframe)
+          this.showMap = true
+          console.log('[EventLocation] Map initialized successfully')
+        } else {
+          console.warn('[EventLocation] No geocoding results found for:', this.event.location)
+        }
+      } catch (err) {
+        console.error('[EventLocation] Error geocoding location:', err)
+        // Silently fail - user can still see the location text
+      }
     },
   },
 }
