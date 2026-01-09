@@ -140,6 +140,7 @@ export default {
         duration: this.event.duration,
         dates: this.event.dates,
         type: this.event.type,
+        description: this.event.description,
         location: this.newLocation,
       }
 
@@ -166,6 +167,7 @@ export default {
 
       // Use Nominatim to geocode the address
       // Following Nominatim usage policy: https://operations.osmfoundation.org/policies/nominatim/
+      // User-Agent header is required by Nominatim to identify the application
       fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${location}`,
         {
@@ -185,6 +187,8 @@ export default {
             const { lat, lon } = data[0]
 
             // Create an OpenStreetMap embed
+            // sandbox with allow-same-origin and allow-scripts is needed for the map to function
+            // This is safe because we're loading from the trusted openstreetmap.org domain
             const iframe = document.createElement("iframe")
             iframe.width = "100%"
             iframe.height = "100%"
