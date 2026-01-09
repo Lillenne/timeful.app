@@ -89,6 +89,17 @@ func createEvent(c *gin.Context) {
 		fmt.Println(err)
 		return
 	}
+
+	// Validate field lengths
+	if payload.Description != nil && len(*payload.Description) > 5000 {
+		c.JSON(http.StatusBadRequest, responses.Error{Error: "Description must be less than 5000 characters"})
+		return
+	}
+	if payload.Location != nil && len(*payload.Location) > 500 {
+		c.JSON(http.StatusBadRequest, responses.Error{Error: "Location must be less than 500 characters"})
+		return
+	}
+
 	session := sessions.Default(c)
 
 	// If user logged in, set owner id to their user id, otherwise set owner id to nil
@@ -274,6 +285,16 @@ func editEvent(c *gin.Context) {
 	}{}
 	if err := c.Bind(&payload); err != nil {
 		logger.StdErr.Println(err)
+		return
+	}
+
+	// Validate field lengths
+	if payload.Description != nil && len(*payload.Description) > 5000 {
+		c.JSON(http.StatusBadRequest, responses.Error{Error: "Description must be less than 5000 characters"})
+		return
+	}
+	if payload.Location != nil && len(*payload.Location) > 500 {
+		c.JSON(http.StatusBadRequest, responses.Error{Error: "Location must be less than 500 characters"})
 		return
 	}
 
