@@ -123,6 +123,17 @@ export default {
         }
       },
     },
+    'event.location': {
+      handler(newVal, oldVal) {
+        // Re-initialize map if location changes
+        if (newVal && newVal !== oldVal) {
+          this.showMap = false
+          this.$nextTick(() => {
+            this.initMap()
+          })
+        }
+      },
+    },
   },
 
   methods: {

@@ -2,7 +2,7 @@
   <v-card
     :flat="dialog"
     :class="{ 'tw-py-4': !dialog, 'tw-flex-1': dialog }"
-    class="tw-relative tw-flex tw-max-w-[28rem] tw-flex-col tw-overflow-hidden tw-rounded-lg tw-transition-all"
+    class="tw-relative tw-flex tw-max-w-[36rem] tw-flex-col tw-overflow-hidden tw-rounded-lg tw-transition-all"
   >
     <v-card-title class="tw-mb-2 tw-flex tw-gap-2 tw-px-4 sm:tw-px-8">
       <div>
