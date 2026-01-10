@@ -238,14 +238,8 @@
             </div>
           </div>
 
-          <!-- Description -->
-          <EventDescription
-            :event.sync="event"
-            :canEdit="event.ownerId != 0 && canEdit"
-          />
-
-          <!-- Location -->
-          <EventLocation
+          <!-- Event Details (Description & Location) -->
+          <EventDetails
             :event.sync="event"
             :canEdit="event.ownerId != 0 && canEdit"
           />
@@ -410,8 +404,7 @@ import SignInNotSupportedDialog from "@/components/SignInNotSupportedDialog.vue"
 import MarkAvailabilityDialog from "@/components/calendar_permission_dialogs/MarkAvailabilityDialog.vue"
 import InvitationDialog from "@/components/groups/InvitationDialog.vue"
 import HelpDialog from "@/components/HelpDialog.vue"
-import EventDescription from "@/components/event/EventDescription.vue"
-import EventLocation from "@/components/event/EventLocation.vue"
+import EventDetails from "@/components/event/EventDetails.vue"
 import FormerlyKnownAs from "@/components/FormerlyKnownAs.vue"
 export default {
   name: "Event",
@@ -434,8 +427,7 @@ export default {
     MarkAvailabilityDialog,
     InvitationDialog,
     HelpDialog,
-    EventDescription,
-    EventLocation,
+    EventDetails,
     FormerlyKnownAs,
   },
 
