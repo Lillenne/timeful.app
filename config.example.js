@@ -19,4 +19,10 @@ window.__TIMEFUL_CONFIG__ = {
   // Set to true to completely disable analytics - no tracking at all
   // Useful for privacy-focused deployments
   disableAnalytics: false,
+
+  // Mapbox API key (optional - for address autocomplete)
+  // Leave empty to disable address autocomplete feature
+  // Get this from: https://www.mapbox.com/
+  // Free tier includes 100,000 requests per month
+  mapboxApiKey: '',
 }

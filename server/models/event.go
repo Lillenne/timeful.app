@@ -47,6 +47,7 @@ type Event struct {
 	OwnerId     primitive.ObjectID `json:"ownerId" bson:"ownerId,omitempty"`
 	Name        string             `json:"name" bson:"name,omitempty"`
 	Description *string            `json:"description" bson:"description,omitempty"`
+	Location    *string            `json:"location" bson:"location,omitempty"`
 	IsArchived  *bool              `json:"isArchived" bson:"isArchived,omitempty"`
 	IsDeleted   *bool              `json:"isDeleted" bson:"isDeleted,omitempty"`
 

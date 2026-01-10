@@ -4,7 +4,7 @@
     @click:outside="handleDialogInput"
     no-click-animation
     persistent
-    content-class="tw-max-w-[28rem]"
+    content-class="tw-max-w-[42rem]"
     :fullscreen="isPhone"
     scrollable
     :transition="isPhone ? `dialog-bottom-transition` : `dialog-transition`"

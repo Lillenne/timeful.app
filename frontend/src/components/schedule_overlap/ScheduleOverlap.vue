@@ -3659,7 +3659,9 @@ export default {
         title: this.event.name,
         startDate,
         endDate,
-        description: `\n\nThis event was scheduled with Timeful: https://timeful.app/e/${eventId}`,
+        description: this.event.description 
+          ? `${this.event.description}\n\nThis event was scheduled with Timeful: https://timeful.app/e/${eventId}`
+          : `\n\nThis event was scheduled with Timeful: https://timeful.app/e/${eventId}`,
         location: this.event.location || "",
         attendees: emails,
       })

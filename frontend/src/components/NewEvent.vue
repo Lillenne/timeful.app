@@ -2,7 +2,7 @@
   <v-card
     :flat="dialog"
     :class="{ 'tw-py-4': !dialog, 'tw-flex-1': dialog }"
-    class="tw-relative tw-flex tw-max-w-[28rem] tw-flex-col tw-overflow-hidden tw-rounded-lg tw-transition-all"
+    class="tw-relative tw-flex tw-max-w-[42rem] tw-flex-col tw-overflow-hidden tw-rounded-lg tw-transition-all"
   >
     <v-card-title class="tw-mb-2 tw-flex tw-gap-2 tw-px-4 sm:tw-px-8">
       <div>
@@ -57,6 +57,26 @@
           :rules="nameRules"
           autofocus
           required
+        />
+
+        <v-textarea
+          v-model="description"
+          placeholder="Add a description (optional)..."
+          hide-details="auto"
+          solo
+          rows="2"
+          auto-grow
+          counter="5000"
+          maxlength="5000"
+        />
+
+        <LocationAutocomplete
+          v-model="location"
+          placeholder="Add a location (optional)..."
+          hide-details="auto"
+          solo
+          counter="500"
+          maxlength="500"
         />
 
         <SlideToggle
@@ -484,6 +504,7 @@ import dayjs from "dayjs"
 import utcPlugin from "dayjs/plugin/utc"
 import timezonePlugin from "dayjs/plugin/timezone"
 import ExpandableSection from "./ExpandableSection.vue"
+import LocationAutocomplete from "./LocationAutocomplete.vue"
 dayjs.extend(utcPlugin)
 dayjs.extend(timezonePlugin)
 
@@ -511,11 +532,14 @@ export default {
     ExpandableSection,
     AlertText,
     OverflowGradient,
+    LocationAutocomplete,
   },
 
   data: () => ({
     formValid: true,
     name: "",
+    description: "",
+    location: "",
     startTime: 9,
     endTime: 17,
     specificTimesEnabled: false,
@@ -638,6 +662,8 @@ export default {
     },
     reset() {
       this.name = ""
+      this.description = ""
+      this.location = ""
       this.startTime = 9
       this.endTime = 17
       this.specificTimesEnabled = false
@@ -722,6 +748,8 @@ export default {
 
       const payload = {
         name: this.name,
+        description: this.description || null,
+        location: this.location || null,
         duration: duration,
         dates: dates,
         hasSpecificTimes: this.specificTimesEnabled,
@@ -868,6 +896,8 @@ export default {
     updateFieldsFromEvent() {
       if (this.event) {
         this.name = this.event.name
+        this.description = this.event.description || ""
+        this.location = this.event.location || ""
 
         // Set start time, accounting for the timezone
         this.startTime = Math.floor(
