@@ -119,15 +119,6 @@ export default {
     },
   },
 
-  mounted() {
-    console.log('[EventLocation] Component mounted', {
-      hasLocation: !!this.event.location,
-      location: this.event.location,
-      canEdit: this.canEdit,
-      mapId: this.mapId
-    })
-  },
-
   data() {
     return {
       isEditing: false,
@@ -135,6 +126,7 @@ export default {
       showMap: false,
       mapExpanded: false, // Map starts collapsed
       mapId: `map-${Math.random().toString(36).substring(7)}`,
+      mapInitialized: false, // Track if map has been rendered
     }
   },
 
@@ -153,7 +145,7 @@ export default {
       handler(val) {
         if (val) {
           this.$nextTick(() => {
-            this.initMap()
+            this.geocodeLocation()
           })
         }
       },
@@ -163,8 +155,19 @@ export default {
         // Re-initialize map if location changes
         if (newVal && newVal !== oldVal) {
           this.showMap = false
+          this.mapInitialized = false
           this.$nextTick(() => {
-            this.initMap()
+            this.geocodeLocation()
+          })
+        }
+      },
+    },
+    mapExpanded: {
+      handler(val) {
+        // When map is expanded, render it if not already done
+        if (val && this.showMap && !this.mapInitialized) {
+          this.$nextTick(() => {
+            this.renderMap()
           })
         }
       },
@@ -175,7 +178,6 @@ export default {
     ...mapActions(["showError"]),
     toggleMapExpanded() {
       this.mapExpanded = !this.mapExpanded
-      console.log('[EventLocation] Map toggled:', this.mapExpanded ? 'expanded' : 'collapsed')
     },
     saveLocation() {
       const oldEvent = { ...this.event }
@@ -204,36 +206,12 @@ export default {
         })
       })
     },
-    async initMap() {
-      console.log('[EventLocation] initMap called', {
-        hasLocation: !!this.event.location,
-        location: this.event.location,
-        showMap: this.showMap,
-        mapId: this.mapId
-      })
-
+    async geocodeLocation() {
       if (!this.event.location) {
-        console.log('[EventLocation] No location provided, skipping map initialization')
         return
       }
 
-      if (this.showMap) {
-        console.log('[EventLocation] Map already showing, skipping re-initialization')
-        return
-      }
-
-      // Simple OpenStreetMap embed using Leaflet
-      // For now, we'll use a simpler approach with an iframe to OSM
       const location = this.event.location
-
-      // Create a simple map container with OpenStreetMap
-      const mapContainer = document.getElementById(this.mapId)
-      if (!mapContainer) {
-        console.error('[EventLocation] Map container not found:', this.mapId)
-        return
-      }
-
-      console.log('[EventLocation] Geocoding address:', this.event.location)
 
       try {
         // Use Nominatim to geocode the address
@@ -253,7 +231,6 @@ export default {
         }
 
         let data = await response.json()
-        console.log('[EventLocation] Geocoding response:', data)
 
         // If no results, try with simplified address (remove suite/apartment numbers)
         if (!data || data.length === 0) {
@@ -263,7 +240,6 @@ export default {
             .replace(/#\d+,?\s*/i, '')
           
           if (simplifiedAddress !== location) {
-            console.log('[EventLocation] Retrying with simplified address:', simplifiedAddress)
             const retryResponse = await fetch(
               `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(simplifiedAddress)}`,
               {
@@ -275,7 +251,6 @@ export default {
             
             if (retryResponse.ok) {
               data = await retryResponse.json()
-              console.log('[EventLocation] Simplified geocoding response:', data)
             }
           }
         }
@@ -283,37 +258,88 @@ export default {
         if (data && data.length > 0) {
           const lat = parseFloat(data[0].lat)
           const lon = parseFloat(data[0].lon)
-          console.log('[EventLocation] Creating map at coordinates:', { lat, lon })
-
-          // Create an OpenStreetMap embed
-          // sandbox with allow-same-origin and allow-scripts is needed for the map to function
-          // This is safe because we're loading from the trusted openstreetmap.org domain
-          const iframe = document.createElement("iframe")
-          iframe.width = "100%"
-          iframe.height = "100%"
-          iframe.frameBorder = "0"
-          iframe.scrolling = "no"
-          iframe.marginHeight = "0"
-          iframe.marginWidth = "0"
-          iframe.sandbox = "allow-scripts allow-same-origin"
-          iframe.referrerPolicy = "no-referrer"
-          iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${
-            lon - 0.01
-          },${lat - 0.01},${lon + 0.01},${
-            lat + 0.01
-          }&layer=mapnik&marker=${lat},${lon}`
-
-          mapContainer.innerHTML = ""
-          mapContainer.appendChild(iframe)
+          
+          // Store coordinates for later rendering
+          this.mapLat = lat
+          this.mapLon = lon
           this.showMap = true
-          console.log('[EventLocation] Map initialized successfully')
-        } else {
-          console.warn('[EventLocation] No geocoding results found for:', this.event.location)
+          
+          // If map is already expanded, render it now
+          if (this.mapExpanded) {
+            this.$nextTick(() => {
+              this.renderMap()
+            })
+          }
         }
       } catch (err) {
         console.error('[EventLocation] Error geocoding location:', err)
         // Silently fail - user can still see the location text
       }
+    },
+    calculateBboxFromZoom(lat, lon, zoom) {
+      // Calculate the bounding box based on zoom level
+      // At zoom 18, we want to show roughly 1-2 city blocks
+      // At zoom 17, we want to show roughly 2-3 city blocks
+      // The formula: latDelta = 180 / (2^(zoom+1)), lonDelta = latDelta / cos(lat)
+      
+      const latDelta = 180 / Math.pow(2, zoom + 1)
+      const lonDelta = latDelta / Math.cos(lat * Math.PI / 180)
+      
+      const south = lat - latDelta
+      const north = lat + latDelta
+      const west = lon - lonDelta
+      const east = lon + lonDelta
+      
+      return { south, north, west, east }
+    },
+    renderMap() {
+      if (this.mapInitialized) {
+        return
+      }
+
+      if (!this.mapLat || !this.mapLon) {
+        console.error('[EventLocation] Missing coordinates for map rendering')
+        return
+      }
+
+      // Create a simple map container with OpenStreetMap
+      const mapContainer = document.getElementById(this.mapId)
+      if (!mapContainer) {
+        console.error('[EventLocation] Map container not found:', this.mapId)
+        return
+      }
+
+      const lat = this.mapLat
+      const lon = this.mapLon
+
+      // Determine zoom level based on screen size
+      // Smaller screens get more zoom (higher zoom number = more zoomed in)
+      const isSmallScreen = window.innerWidth < 640
+      const zoom = isSmallScreen ? 18 : 17
+
+      // Calculate bounding box from zoom level
+      const bbox = this.calculateBboxFromZoom(lat, lon, zoom)
+      
+      const bboxString = `${bbox.west},${bbox.south},${bbox.east},${bbox.north}`
+      const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bboxString}&layer=mapnik&marker=${lat},${lon}`
+
+      // Create an OpenStreetMap embed
+      // sandbox with allow-same-origin and allow-scripts is needed for the map to function
+      // This is safe because we're loading from the trusted openstreetmap.org domain
+      const iframe = document.createElement("iframe")
+      iframe.width = "100%"
+      iframe.height = "100%"
+      iframe.frameBorder = "0"
+      iframe.scrolling = "no"
+      iframe.marginHeight = "0"
+      iframe.marginWidth = "0"
+      iframe.sandbox = "allow-scripts allow-same-origin"
+      iframe.referrerPolicy = "no-referrer"
+      iframe.src = mapUrl
+
+      mapContainer.innerHTML = ""
+      mapContainer.appendChild(iframe)
+      this.mapInitialized = true
     },
   },
 }
