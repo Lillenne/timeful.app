@@ -4,11 +4,17 @@
     <v-btn
       v-if="hasContent && !expanded && !isEditingDescription && !isEditingLocation"
       text
-      class="-tw-ml-2 tw-mt-0 tw-w-min tw-px-2 tw-text-dark-gray"
+      class="-tw-ml-2 tw-mt-0 tw-px-2 tw-text-dark-gray"
       @click="expanded = true"
     >
       <v-icon small class="tw-mr-1">mdi-information-outline</v-icon>
-      View event details
+      <span class="tw-flex tw-items-center tw-gap-1">
+        View event details
+        <span class="tw-ml-1 tw-flex tw-gap-1">
+          <v-icon v-if="showDescription" x-small class="tw-text-gray-500">mdi-text</v-icon>
+          <v-icon v-if="showLocation" x-small class="tw-text-gray-500">mdi-map-marker</v-icon>
+        </span>
+      </span>
     </v-btn>
 
     <!-- Add details button when no content exists -->
