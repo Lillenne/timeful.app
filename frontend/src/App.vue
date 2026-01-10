@@ -20,7 +20,7 @@
     <CookieConsent />
     <div
       v-if="showHeader"
-      class="tw-fixed tw-z-40 tw-h-14 tw-w-screen tw-bg-white sm:tw-h-16"
+      class="tw-fixed tw-z-40 tw-h-14 tw-w-screen tw-border-b tw-border-gray-200 tw-bg-white sm:tw-h-16"
       dark
     >
       <div

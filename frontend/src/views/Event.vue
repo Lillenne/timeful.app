@@ -1,9 +1,6 @@
 <template>
   <span>
-    <FormerlyKnownAs
-      class="tw-mx-auto tw-mb-10 tw-mt-3 tw-max-w-6xl tw-pl-4 sm:tw-pl-12"
-    />
-    <div v-if="event" class="tw-mt-8 tw-h-full">
+    <div v-if="event" class="tw-h-full tw-pt-14 sm:tw-pt-16">
       <!-- Mark availability option dialog -->
       <MarkAvailabilityDialog
         v-model="choiceDialog"
@@ -238,14 +235,8 @@
             </div>
           </div>
 
-          <!-- Description -->
-          <EventDescription
-            :event.sync="event"
-            :canEdit="event.ownerId != 0 && canEdit"
-          />
-
-          <!-- Location -->
-          <EventLocation
+          <!-- Event Details (Description & Location) -->
+          <EventDetails
             :event.sync="event"
             :canEdit="event.ownerId != 0 && canEdit"
           />
@@ -410,9 +401,7 @@ import SignInNotSupportedDialog from "@/components/SignInNotSupportedDialog.vue"
 import MarkAvailabilityDialog from "@/components/calendar_permission_dialogs/MarkAvailabilityDialog.vue"
 import InvitationDialog from "@/components/groups/InvitationDialog.vue"
 import HelpDialog from "@/components/HelpDialog.vue"
-import EventDescription from "@/components/event/EventDescription.vue"
-import EventLocation from "@/components/event/EventLocation.vue"
-import FormerlyKnownAs from "@/components/FormerlyKnownAs.vue"
+import EventDetails from "@/components/event/EventDetails.vue"
 export default {
   name: "Event",
 
@@ -434,9 +423,7 @@ export default {
     MarkAvailabilityDialog,
     InvitationDialog,
     HelpDialog,
-    EventDescription,
-    EventLocation,
-    FormerlyKnownAs,
+    EventDetails,
   },
 
   data: () => ({
