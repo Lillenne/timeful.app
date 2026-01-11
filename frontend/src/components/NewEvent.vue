@@ -63,7 +63,7 @@
           v-model="showDescriptionLocation"
           label="Description and location (optional)"
           labelClass="tw-text-sm tw-text-very-dark-gray"
-          :auto-scroll="dialog"
+          :auto-scroll="false"
         >
           <div class="tw-flex tw-flex-col tw-gap-5 tw-pt-2">
             <v-textarea
