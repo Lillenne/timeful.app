@@ -166,7 +166,7 @@
             might work?
           </div>
           <SlideToggle
-            v-if="!edit && !daysOnly"
+            v-if="!edit"
             class="tw-mb-4 tw-w-full"
             v-model="selectedDateOption"
             :options="dateOptionsList"
@@ -224,42 +224,6 @@
             </div>
           </v-expand-transition>
         </div>
-
-        <v-checkbox
-          v-if="!guestEvent && authUser"
-          v-model="notificationsEnabled"
-          hide-details
-          class="tw-mt-2"
-        >
-          <template v-slot:label>
-            <span class="tw-text-sm tw-text-very-dark-gray"
-              >Email me each time someone joins my event</span
-            >
-          </template>
-        </v-checkbox>
-        <v-checkbox
-          v-else-if="!guestEvent"
-          disabled
-          messages="test"
-          off-icon="mdi-checkbox-blank-off-outline"
-          class="tw-mt-2"
-        >
-          <template v-slot:label>
-            <span class="tw-text-sm"
-              >Email me each time someone joins my event</span
-            >
-          </template>
-          <template v-slot:message="{ key, message }">
-            <div
-              class="tw-pointer-events-auto -tw-mt-1 tw-ml-[32px] tw-text-xs tw-text-dark-gray"
-            >
-              <span class="tw-font-medium tw-text-very-dark-gray"
-                ><a @click="$emit('signIn')">Sign in</a>
-                to use this feature
-              </span>
-            </div>
-          </template>
-        </v-checkbox>
 
         <div class="tw-flex tw-flex-col tw-gap-2">
           <ExpandableSection
@@ -322,6 +286,39 @@
                   :items="timeIncrementItems"
                 ></v-select>
               </div>
+              <v-checkbox
+                v-if="!guestEvent && authUser"
+                v-model="notificationsEnabled"
+                hide-details
+              >
+                <template v-slot:label>
+                  <span class="tw-text-sm tw-text-black"
+                    >Email me each time someone joins my event</span
+                  >
+                </template>
+              </v-checkbox>
+              <v-checkbox
+                v-else-if="!guestEvent"
+                disabled
+                messages="test"
+                off-icon="mdi-checkbox-blank-off-outline"
+              >
+                <template v-slot:label>
+                  <span class="tw-text-sm"
+                    >Email me each time someone joins my event</span
+                  >
+                </template>
+                <template v-slot:message="{ key, message }">
+                  <div
+                    class="tw-pointer-events-auto -tw-mt-1 tw-ml-[32px] tw-text-xs tw-text-dark-gray"
+                  >
+                    <span class="tw-font-medium tw-text-very-dark-gray"
+                      ><a @click="$emit('signIn')">Sign in</a>
+                      to use this feature
+                    </span>
+                  </div>
+                </template>
+              </v-checkbox>
               <v-checkbox
                 v-if="authUser && !guestEvent"
                 v-model="collectEmails"
