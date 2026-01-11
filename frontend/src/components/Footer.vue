@@ -82,8 +82,8 @@
         <!-- Links -->
         <div class="tw-flex tw-flex-col tw-gap-2">
           <div class="tw-mb-1 tw-font-bold">Links</div>
-          <div>
-            <a href="/blog" class="tw-text-sm">Blog</a>
+          <div v-if="blogEnabled">
+            <a :href="blogUrl" target="_blank" rel="noopener noreferrer" class="tw-text-sm">{{ blogButtonText }}</a>
           </div>
           <div>
             <v-menu :nudge-bottom="10" offset-y :close-on-content-click="false">
@@ -119,25 +119,25 @@
         <div class="tw-flex tw-flex-col tw-gap-2">
           <div class="tw-mb-1 tw-font-bold">Articles</div>
           <div>
-            <a href="/blog/schej-is-now-timeful/" class="tw-text-sm"
+            <a :href="getBlogArticleUrl('schej-is-now-timeful/')" target="_blank" rel="noopener noreferrer" class="tw-text-sm"
               >Schej is now Timeful</a
             >
           </div>
           <div>
-            <a href="/blog/about/" class="tw-text-sm"
+            <a :href="getBlogArticleUrl('about/')" target="_blank" rel="noopener noreferrer" class="tw-text-sm"
               >Welcome to the Timeful blog!</a
             >
           </div>
           <div>
-            <a href="/blog/doodle/" class="tw-text-sm">Timeful vs Doodle</a>
+            <a :href="getBlogArticleUrl('doodle/')" target="_blank" rel="noopener noreferrer" class="tw-text-sm">Timeful vs Doodle</a>
           </div>
           <div>
-            <a href="/blog/when2meet/" class="tw-text-sm"
+            <a :href="getBlogArticleUrl('when2meet/')" target="_blank" rel="noopener noreferrer" class="tw-text-sm"
               >Timeful vs When2meet</a
             >
           </div>
           <div>
-            <a href="/blog/gcalandwhen2meet/" class="tw-text-sm"
+            <a :href="getBlogArticleUrl('gcalandwhen2meet/')" target="_blank" rel="noopener noreferrer" class="tw-text-sm"
               >How to use When2meet with Google Calendar</a
             >
           </div>
@@ -197,6 +197,15 @@ export default {
         this.contractAddress.slice(-4)
       )
     },
+    blogUrl() {
+      return window.__TIMEFUL_CONFIG__?.blogUrl || 'https://schej-blog.vercel.app/blog/'
+    },
+    blogButtonText() {
+      return window.__TIMEFUL_CONFIG__?.blogButtonText || 'Blog'
+    },
+    blogEnabled() {
+      return window.__TIMEFUL_CONFIG__?.blogEnabled !== false
+    },
   },
   methods: {
     ...mapActions(["showInfo"]),
@@ -210,6 +219,13 @@ export default {
           console.error("Failed to copy contract address: ", err)
           // Optionally, show an error message to the user
         })
+    },
+    getBlogArticleUrl(path) {
+      const baseUrl = this.blogUrl || 'https://schej-blog.vercel.app/blog/'
+      // Remove trailing slash from baseUrl if present, and leading slash from path if present
+      const cleanBaseUrl = baseUrl.replace(/\/$/, '')
+      const cleanPath = path.replace(/^\//, '')
+      return `${cleanBaseUrl}/${cleanPath}`
     },
   },
 }
