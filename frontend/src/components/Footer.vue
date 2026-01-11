@@ -222,10 +222,14 @@ export default {
     },
     getBlogArticleUrl(path) {
       // Validate path parameter
-      if (!path || typeof path !== 'string') {
-        if (process.env.NODE_ENV === 'development' && path !== undefined) {
+      if (path == null || typeof path !== 'string') {
+        if (process.env.NODE_ENV === 'development' && path != null) {
           console.warn('[getBlogArticleUrl] Invalid path provided:', path)
         }
+        return this.blogUrl
+      }
+      // Check for empty or whitespace-only strings
+      if (!path.trim()) {
         return this.blogUrl
       }
       // Remove trailing slash from baseUrl if present, and leading slash from path if present
