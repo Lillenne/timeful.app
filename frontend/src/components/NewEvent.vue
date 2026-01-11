@@ -63,7 +63,7 @@
           v-model="showDescriptionLocation"
           label="Description and location (optional)"
           labelClass="tw-text-sm tw-text-very-dark-gray"
-          :auto-scroll="dialog"
+          :auto-scroll="false"
         >
           <div class="tw-flex tw-flex-col tw-gap-5 tw-pt-2">
             <v-textarea
@@ -173,7 +173,7 @@
           />
 
           <v-expand-transition>
-            <div v-if="selectedDateOption === dateOptions.SPECIFIC || daysOnly">
+            <div v-if="selectedDateOption === dateOptions.SPECIFIC">
               <div class="tw-mb-2 tw-text-xs tw-text-dark-gray">
                 Drag to select multiple dates
               </div>
