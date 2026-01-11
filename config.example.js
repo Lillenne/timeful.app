@@ -25,4 +25,12 @@ window.__TIMEFUL_CONFIG__ = {
   // Get this from: https://www.mapbox.com/
   // Free tier includes 100,000 requests per month
   mapboxApiKey: '',
+
+  // Blog configuration (optional)
+  // Set blogUrl to the URL of your blog
+  // Set blogButtonText to customize the button text (default: 'Blog')
+  // Set blogEnabled to false to hide the blog button
+  blogUrl: 'https://schej-blog.vercel.app/blog/',
+  blogButtonText: 'Blog',
+  blogEnabled: true,
 }

@@ -12,7 +12,15 @@
 
           <LandingPageHeader>
             <v-btn text @click="openHowItWorksDialog">How it works</v-btn>
-            <v-btn text href="/blog">Blog</v-btn>
+            <v-btn
+              v-if="blogEnabled"
+              text
+              :href="blogUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ blogButtonText }}
+            </v-btn>
             <div v-if="authUser" class="tw-ml-2">
               <AuthUserMenu />
             </div>
@@ -446,6 +454,15 @@ export default {
     ...mapState(["authUser"]),
     isPhone() {
       return isPhone(this.$vuetify)
+    },
+    blogUrl() {
+      return window.__TIMEFUL_CONFIG__?.blogUrl || 'https://schej-blog.vercel.app/blog/'
+    },
+    blogButtonText() {
+      return window.__TIMEFUL_CONFIG__?.blogButtonText || 'Blog'
+    },
+    blogEnabled() {
+      return window.__TIMEFUL_CONFIG__?.blogEnabled !== false
     },
   },
 
