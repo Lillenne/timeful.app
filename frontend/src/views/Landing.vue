@@ -19,8 +19,6 @@
             <v-btn v-else text @click="signIn">Sign in</v-btn>
           </LandingPageHeader>
         </div>
-
-        <FormerlyKnownAs />
       </div>
 
       <div class="tw-flex tw-flex-col tw-items-center">
@@ -304,7 +302,6 @@ import Footer from "@/components/Footer.vue"
 import PronunciationMenu from "@/components/PronunciationMenu.vue"
 import { mapState } from "vuex"
 import AuthUserMenu from "@/components/AuthUserMenu.vue"
-import FormerlyKnownAs from "@/components/FormerlyKnownAs.vue"
 
 export default {
   name: "Landing",
@@ -329,7 +326,6 @@ export default {
     Footer,
     PronunciationMenu,
     AuthUserMenu,
-    FormerlyKnownAs,
   },
 
   data: () => ({
