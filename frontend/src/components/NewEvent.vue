@@ -59,25 +59,34 @@
           required
         />
 
-        <v-textarea
-          v-model="description"
-          placeholder="Add a description (optional)..."
-          hide-details="auto"
-          solo
-          rows="2"
-          auto-grow
-          counter="5000"
-          maxlength="5000"
-        />
+        <ExpandableSection
+          v-model="showDescriptionLocation"
+          label="Description and location (optional)"
+          labelClass="tw-text-sm tw-text-very-dark-gray"
+          :auto-scroll="dialog"
+        >
+          <div class="tw-flex tw-flex-col tw-gap-5 tw-pt-2">
+            <v-textarea
+              v-model="description"
+              placeholder="Add a description (optional)..."
+              hide-details="auto"
+              solo
+              rows="2"
+              auto-grow
+              counter="5000"
+              maxlength="5000"
+            />
 
-        <LocationAutocomplete
-          v-model="location"
-          placeholder="Add a location (optional)..."
-          hide-details="auto"
-          solo
-          counter="500"
-          maxlength="500"
-        />
+            <LocationAutocomplete
+              v-model="location"
+              placeholder="Add a location (optional)..."
+              hide-details="auto"
+              solo
+              counter="500"
+              maxlength="500"
+            />
+          </div>
+        </ExpandableSection>
 
         <SlideToggle
           v-if="daysOnlyEnabled && !edit"
@@ -156,13 +165,11 @@
             {{ selectedDateOption === dateOptions.SPECIFIC ? "dates" : "days" }}
             might work?
           </div>
-          <v-select
+          <SlideToggle
             v-if="!edit && !daysOnly"
+            class="tw-mb-4 tw-w-full"
             v-model="selectedDateOption"
-            :items="Object.values(dateOptions)"
-            solo
-            hide-details
-            class="tw-mb-4"
+            :options="dateOptionsList"
           />
 
           <v-expand-transition>
@@ -549,10 +556,10 @@ export default {
     startOnMonday: prefersStartOnMonday(),
     notificationsEnabled: true,
 
-    daysOnly: false,
+    daysOnly: true,
     daysOnlyOptions: Object.freeze([
-      { text: "Dates and times", value: false },
       { text: "Dates only", value: true },
+      { text: "Dates and times", value: false },
     ]),
 
     // Date options
@@ -561,6 +568,9 @@ export default {
       DOW: "Days of the week",
     }),
     selectedDateOption: "Specific dates",
+
+    // Description and location section
+    showDescriptionLocation: false,
 
     // Email reminders
     showEmailReminders: false,
@@ -653,6 +663,12 @@ export default {
         { text: "60 min", value: 60 },
       ]
     },
+    dateOptionsList() {
+      return [
+        { text: this.dateOptions.SPECIFIC, value: this.dateOptions.SPECIFIC },
+        { text: this.dateOptions.DOW, value: this.dateOptions.DOW },
+      ]
+    },
   },
 
   methods: {
@@ -670,9 +686,10 @@ export default {
       this.selectedDays = []
       this.selectedDaysOfWeek = []
       this.notificationsEnabled = true
-      this.daysOnly = false
+      this.daysOnly = true
       this.selectedDateOption = "Specific dates"
       this.emails = []
+      this.showDescriptionLocation = false
       this.showAdvancedOptions = false
       this.blindAvailabilityEnabled = false
       this.sendEmailAfterXResponsesEnabled = false
