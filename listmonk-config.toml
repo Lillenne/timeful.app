@@ -3,7 +3,9 @@
 address = "0.0.0.0:9000"
 
 # BasicAuth credentials for the admin interface.
-# IMPORTANT: Change these default credentials after first login!
+# ⚠️  SECURITY WARNING: These are default credentials for initial setup only!
+# IMPORTANT: Change these credentials immediately after first login via the Listmonk web interface!
+# These credentials are only used for the initial setup and should be changed in production.
 admin_username = "admin"
 admin_password = "listmonk"
 
@@ -12,15 +14,54 @@ admin_password = "listmonk"
 host = "listmonk-db"
 port = 5432
 user = "listmonk"
+# ⚠️  SECURITY NOTE: This password should match LISTMONK_DB_PASSWORD in your .env file
+# For production deployments, use a strong password and consider using Docker secrets
 password = "listmonk"
 database = "listmonk"
+# SSL is disabled for local Docker networking. For production with external databases,
+# consider enabling SSL by setting ssl_mode = "require" or "verify-full"
 ssl_mode = "disable"
 max_open = 25
 max_idle = 25
 max_lifetime = "300s"
 
-# NOTE: This configuration file uses default credentials for initial setup.
-# After first login to Listmonk (http://localhost:9000), you should:
-# 1. Change the admin password in the Listmonk settings
-# 2. Optionally, update this file with stronger credentials
-# 3. Restart the Listmonk container: docker compose restart listmonk
+# ============================================================================
+# SETUP INSTRUCTIONS
+# ============================================================================
+# 
+# 1. Start Listmonk services:
+#    docker compose up -d listmonk-db listmonk
+#
+# 2. Initialize the database (first time only):
+#    docker compose exec listmonk ./listmonk --install
+#    (or: docker compose run --rm listmonk ./listmonk --install)
+#    When prompted, type 'y' to confirm installation
+#
+# 3. Access Listmonk admin interface:
+#    http://localhost:9000
+#    Username: admin
+#    Password: listmonk
+#
+# 4. IMMEDIATELY change the admin password:
+#    - Log in with default credentials above
+#    - Go to Settings → Users
+#    - Update the admin password to a strong password
+#
+# 5. (Optional) Update this config file with new credentials and database password:
+#    - Edit this file with your new passwords
+#    - Restart Listmonk: docker compose restart listmonk
+#
+# ============================================================================
+# PRODUCTION SECURITY RECOMMENDATIONS
+# ============================================================================
+#
+# For production deployments, consider:
+# 1. Use strong, unique passwords (generate with: openssl rand -base64 32)
+# 2. Set LISTMONK_DB_PASSWORD in .env to a secure password
+# 3. Update this config file to match the .env password
+# 4. Consider using Docker secrets for sensitive values
+# 5. Enable SSL for database connections if using external PostgreSQL
+# 6. Regularly backup the PostgreSQL database
+# 7. Keep Listmonk and PostgreSQL images updated
+#
+# ============================================================================
