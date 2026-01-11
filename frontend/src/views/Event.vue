@@ -1,6 +1,6 @@
 <template>
   <span>
-    <div v-if="event" class="tw-h-full tw-pt-14 sm:tw-pt-16">
+    <div v-if="event" class="tw-h-full tw-pt-[3.5rem] sm:tw-pt-[4rem]">
       <!-- Mark availability option dialog -->
       <MarkAvailabilityDialog
         v-model="choiceDialog"

@@ -1,7 +1,7 @@
 <template>
   <span>
     <div
-      class="tw-mx-auto tw-mb-24 tw-mt-4 tw-max-w-6xl tw-space-y-4 sm:tw-mb-12 sm:tw-mt-7"
+      class="tw-mx-auto tw-mb-24 tw-max-w-6xl tw-space-y-4 tw-pt-[3.5rem] sm:tw-mb-12 sm:tw-pt-[4rem]"
     >
       <!-- Preload images -->
       <div class="tw-hidden">
