@@ -62,7 +62,7 @@
         <ExpandableSection
           v-model="showDescriptionLocation"
           label="Description and location (optional)"
-          labelClass="tw-text-sm tw-text-very-dark-gray"
+          labelClass="tw-text-lg tw-text-black"
           :auto-scroll="false"
         >
           <div class="tw-flex tw-flex-col tw-gap-5 tw-pt-2">
@@ -88,6 +88,9 @@
           </div>
         </ExpandableSection>
 
+        <div class="tw-mb-2 tw-text-lg tw-text-black">
+          What type of event?
+        </div>
         <SlideToggle
           v-if="daysOnlyEnabled && !edit"
           class="tw-w-full"
@@ -271,7 +274,7 @@
 
           <ExpandableSection
             v-model="showAdvancedOptions"
-            label="Advanced options"
+            label="Options"
             :auto-scroll="dialog"
           >
             <div class="tw-flex tw-flex-col tw-gap-5 tw-pt-2">
