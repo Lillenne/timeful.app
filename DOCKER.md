@@ -278,6 +278,274 @@ LISTMONK_PASSWORD=your_password
 LISTMONK_LIST_ID=1
 ```
 
+## Self-Hosting Listmonk with Docker Compose
+
+Timeful can be integrated with [Listmonk](https://listmonk.app/), a self-hosted newsletter and mailing list manager, for sending email campaigns and transactional emails.
+
+### Why Use Listmonk?
+
+Listmonk provides:
+- **Newsletter Management**: Create and send newsletters to subscribers
+- **Transactional Emails**: Send event reminders and notifications
+- **Subscriber Management**: Manage email lists and preferences
+- **Templates**: Create reusable email templates
+- **Analytics**: Track email opens and clicks
+- **Self-Hosted**: Full control over your email infrastructure
+
+### Adding Listmonk to Your Docker Setup
+
+The repository includes Listmonk services in both `docker-compose.yml` and `docker-compose.ghcr.yml` files. These services are **optional** and can be enabled or disabled as needed.
+
+#### Services Included
+
+Two additional services are defined for Listmonk:
+
+1. **listmonk-db** - PostgreSQL database for Listmonk
+   - Port: 5432 (internal only)
+   - Volume: `listmonk_db_data` for data persistence
+
+2. **listmonk** - Listmonk web application
+   - Port: 9000 (default, configurable via `LISTMONK_PORT`)
+   - Web interface: http://localhost:9000
+   - API endpoint: http://localhost:9000/api
+
+#### Quick Start with Listmonk
+
+**1. Start Listmonk Services**
+
+The Listmonk services are included in the compose files but you can start them explicitly:
+
+```bash
+# Start all services including Listmonk
+docker compose up -d
+
+# Or start only Listmonk services
+docker compose up -d listmonk-db listmonk
+```
+
+**2. Initialize Listmonk**
+
+On first run, you need to install Listmonk's database schema:
+
+```bash
+# Run the installation
+docker compose exec listmonk ./listmonk --install
+
+# This will create the necessary database tables
+```
+
+**3. Access Listmonk Admin Interface**
+
+Open your browser and navigate to http://localhost:9000
+
+Default credentials (from `listmonk-config.toml`):
+- **Username**: `admin`
+- **Password**: `listmonk`
+
+**⚠️ IMPORTANT**: Change these credentials immediately after first login!
+
+**4. Configure Listmonk**
+
+After logging in:
+
+a. **Change Admin Password**:
+   - Go to Settings → Users
+   - Update the admin password
+
+b. **Configure SMTP Settings** (required for sending emails):
+   - Go to Settings → SMTP
+   - Add your SMTP server details (e.g., Gmail, SendGrid, Mailgun, Amazon SES)
+   - Test the connection
+
+   Example for Gmail:
+   ```
+   Host: smtp.gmail.com
+   Port: 587
+   TLS: Enabled
+   Username: your-email@gmail.com
+   Password: your-app-password
+   ```
+
+c. **Create a Mailing List**:
+   - Go to Lists → Create New
+   - Name your list (e.g., "Timeful Users")
+   - Note the List ID (you'll need this for the `.env` file)
+
+d. **Create Email Templates** (optional):
+   - Go to Campaigns → Templates
+   - Create templates for event reminders and notifications
+   - Note the Template IDs
+
+**5. Configure Timeful to Use Listmonk**
+
+Edit your `.env` file and add/update these variables:
+
+```env
+# Listmonk Configuration
+LISTMONK_URL=http://listmonk:9000
+LISTMONK_USERNAME=admin
+LISTMONK_PASSWORD=your_new_admin_password
+LISTMONK_LIST_ID=1
+
+# Optional: Email Template IDs (if you created custom templates)
+LISTMONK_INITIAL_EMAIL_REMINDER_ID=1
+LISTMONK_SECOND_EMAIL_REMINDER_ID=2
+LISTMONK_FINAL_EMAIL_REMINDER_ID=3
+
+# Optional: Change Listmonk database password (recommended for production)
+LISTMONK_DB_PASSWORD=your_secure_password
+
+# Optional: Change Listmonk port
+LISTMONK_PORT=9000
+```
+
+**6. Update Configuration File**
+
+If you changed the database password or admin credentials:
+
+Edit `listmonk-config.toml` in the repository root:
+
+```toml
+[app]
+address = "0.0.0.0:9000"
+admin_username = "admin"
+admin_password = "your_new_password"
+
+[db]
+host = "listmonk-db"
+port = 5432
+user = "listmonk"
+password = "your_secure_db_password"
+database = "listmonk"
+ssl_mode = "disable"
+```
+
+**7. Restart Services**
+
+```bash
+docker compose restart backend listmonk
+```
+
+### Managing Listmonk
+
+#### View Logs
+
+```bash
+docker compose logs -f listmonk
+docker compose logs -f listmonk-db
+```
+
+#### Backup Listmonk Database
+
+```bash
+# Create backup
+docker compose exec listmonk-db pg_dump -U listmonk listmonk > listmonk-backup.sql
+
+# Restore from backup
+docker compose exec -T listmonk-db psql -U listmonk listmonk < listmonk-backup.sql
+```
+
+#### Stop Listmonk (Keep Other Services Running)
+
+```bash
+docker compose stop listmonk listmonk-db
+```
+
+#### Remove Listmonk Completely
+
+If you don't want to use Listmonk:
+
+```bash
+# Stop and remove containers
+docker compose stop listmonk listmonk-db
+docker compose rm -f listmonk listmonk-db
+
+# Remove volume (⚠️  deletes all Listmonk data)
+docker volume rm timeful.app_listmonk_db_data
+```
+
+Or you can simply comment out the Listmonk services in your `docker-compose.yml` file.
+
+### Accessing Listmonk from Outside Docker
+
+If you're running Listmonk but accessing Timeful from outside the Docker network (e.g., for development), you'll need to use `http://localhost:9000` instead of `http://listmonk:9000`:
+
+```env
+# For external access (development)
+LISTMONK_URL=http://localhost:9000
+
+# For Docker internal access (production)
+LISTMONK_URL=http://listmonk:9000
+```
+
+### Production Considerations
+
+For production deployments:
+
+1. **Change Default Credentials**: Update both admin password and database password
+2. **Use Environment Variables**: Consider using Docker secrets for sensitive data
+3. **Configure SMTP**: Set up a reliable SMTP service (SendGrid, Mailgun, Amazon SES)
+4. **Backup Regularly**: Set up automated backups of the PostgreSQL database
+5. **Reverse Proxy**: Put Listmonk behind a reverse proxy with SSL (Nginx, Caddy, Traefik)
+6. **Resource Limits**: Add memory and CPU limits in production
+
+Example reverse proxy configuration (Nginx):
+
+```nginx
+# Listmonk admin interface
+location /listmonk/ {
+    proxy_pass http://localhost:9000/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+}
+```
+
+### Troubleshooting Listmonk
+
+**Listmonk won't start**:
+```bash
+# Check if database is healthy
+docker compose ps listmonk-db
+
+# View logs
+docker compose logs listmonk
+```
+
+**Can't access Listmonk UI**:
+- Verify port 9000 is not in use: `netstat -an | grep 9000`
+- Check firewall settings
+- Ensure services are running: `docker compose ps`
+
+**Database connection errors**:
+- Verify PostgreSQL is healthy: `docker compose exec listmonk-db pg_isready -U listmonk`
+- Check credentials in `listmonk-config.toml` match `.env` file
+
+**Emails not sending**:
+- Check SMTP configuration in Listmonk settings
+- Verify SMTP credentials are correct
+- Check Listmonk logs for error messages
+- Test SMTP connection from within Listmonk
+
+### Using External Listmonk Instance
+
+If you already have a Listmonk instance running elsewhere:
+
+1. Don't start the Listmonk services in docker-compose
+2. Configure `.env` to point to your external instance:
+
+```env
+LISTMONK_URL=https://your-listmonk-domain.com
+LISTMONK_USERNAME=your_username
+LISTMONK_PASSWORD=your_password
+LISTMONK_LIST_ID=your_list_id
+```
+
+3. Restart the Timeful backend:
+
+```bash
+docker compose restart backend
+```
+
 ### Slack Notifications
 
 For monitoring and alerts via Slack:
