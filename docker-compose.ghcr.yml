@@ -30,6 +30,64 @@ services:
       - SETGID
       - SETUID
 
+  # PostgreSQL Database (for Listmonk)
+  listmonk-db:
+    image: postgres:15-alpine
+    container_name: timeful-listmonk-db
+    restart: unless-stopped
+    # Run as postgres user (uid 70 in official postgres:alpine image)
+    user: "70:70"
+    environment:
+      - POSTGRES_PASSWORD=${LISTMONK_DB_PASSWORD:-listmonk}
+      - POSTGRES_USER=listmonk
+      - POSTGRES_DB=listmonk
+    volumes:
+      - listmonk_db_data:/var/lib/postgresql/data
+    networks:
+      - timeful-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U listmonk"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+      - FOWNER
+
+  # Listmonk - Newsletter and mailing list manager
+  listmonk:
+    image: listmonk/listmonk:latest
+    container_name: timeful-listmonk
+    restart: unless-stopped
+    # Run as non-root user
+    user: "1000:1000"
+    ports:
+      - "${LISTMONK_PORT:-9000}:9000"
+    depends_on:
+      listmonk-db:
+        condition: service_healthy
+    environment:
+      - TZ=Etc/UTC
+    volumes:
+      # Mount config file
+      - ./listmonk-config.toml:/listmonk/config.toml:ro
+    networks:
+      - timeful-network
+    command: ["./listmonk"]
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
   # Backend API Server
   backend:
     image: ghcr.io/lillenne/timeful.app/backend:latest
@@ -150,4 +208,6 @@ volumes:
   mongodb_config:
     driver: local
   backend_logs:
+    driver: local
+  listmonk_db_data:
     driver: local

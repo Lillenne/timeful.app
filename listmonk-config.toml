@@ -1,0 +1,26 @@
+[app]
+# Interface and port where the app will run its webserver.
+address = "0.0.0.0:9000"
+
+# BasicAuth credentials for the admin interface.
+# IMPORTANT: Change these default credentials after first login!
+admin_username = "admin"
+admin_password = "listmonk"
+
+# Database.
+[db]
+host = "listmonk-db"
+port = 5432
+user = "listmonk"
+password = "listmonk"
+database = "listmonk"
+ssl_mode = "disable"
+max_open = 25
+max_idle = 25
+max_lifetime = "300s"
+
+# NOTE: This configuration file uses default credentials for initial setup.
+# After first login to Listmonk (http://localhost:9000), you should:
+# 1. Change the admin password in the Listmonk settings
+# 2. Optionally, update this file with stronger credentials
+# 3. Restart the Listmonk container: docker compose restart listmonk

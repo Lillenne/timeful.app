@@ -477,7 +477,294 @@ Use `systemctl` instead of `systemctl --user` for all management commands.
 - **Resource management**: Use systemd resource controls
 - **Boot integration**: Start services at system boot
 
+## Self-Hosting Listmonk with Podman
+
+Timeful can be integrated with [Listmonk](https://listmonk.app/), a self-hosted newsletter and mailing list manager. The Listmonk services are included in the Docker Compose files and work seamlessly with Podman.
+
+### Using Podman Compose with Listmonk
+
+The easiest way to run Listmonk with Podman is using `podman-compose`:
+
+```bash
+# Start all services including Listmonk
+podman-compose up -d
+
+# Or start only Listmonk services
+podman-compose up -d listmonk-db listmonk
+
+# Initialize Listmonk database on first run
+podman exec timeful-listmonk ./listmonk --install
+```
+
+Access Listmonk at http://localhost:9000 with default credentials:
+- Username: `admin`
+- Password: `listmonk`
+
+**⚠️ IMPORTANT**: Change these credentials after first login!
+
+For complete Listmonk configuration instructions, see the [DOCKER.md](./DOCKER.md#self-hosting-listmonk-with-docker-compose) guide. All instructions apply to Podman as well.
+
+### Adding Listmonk to Quadlets
+
+If you're using Podman Quadlets (systemd integration), you can add Listmonk services:
+
+#### 1. PostgreSQL for Listmonk
+
+Create `~/.config/containers/systemd/timeful-listmonk-db.container`:
+
+```ini
+[Unit]
+Description=Timeful Listmonk PostgreSQL Database
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/library/postgres:15-alpine
+ContainerName=timeful-listmonk-db
+AutoUpdate=registry
+
+# Run as postgres user (uid 70 in postgres:alpine image)
+User=70:70
+
+# Environment
+Environment=POSTGRES_PASSWORD=listmonk
+Environment=POSTGRES_USER=listmonk
+Environment=POSTGRES_DB=listmonk
+EnvironmentFile=%h/.config/timeful/listmonk-db.env
+
+# Networking
+Network=timeful.network
+
+# Volumes
+Volume=timeful-listmonk-db-data:/var/lib/postgresql/data
+
+# Health check
+HealthCmd=pg_isready -U listmonk
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=5
+
+# Security options
+SecurityLabelDisable=false
+NoNewPrivileges=true
+
+[Service]
+Restart=unless-stopped
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target
+```
+
+#### 2. Listmonk Service
+
+Create `~/.config/containers/systemd/timeful-listmonk.container`:
+
+```ini
+[Unit]
+Description=Timeful Listmonk Newsletter Manager
+After=timeful-listmonk-db.service
+Requires=timeful-listmonk-db.service
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/listmonk/listmonk:latest
+ContainerName=timeful-listmonk
+AutoUpdate=registry
+
+# Run as non-root user
+User=1000:1000
+
+# Networking
+Network=timeful.network
+PublishPort=9000:9000
+
+# Volumes - mount the config file
+Volume=%h/.config/timeful/listmonk-config.toml:/listmonk/config.toml:ro
+
+# Environment
+Environment=TZ=Etc/UTC
+
+# Command
+Exec=./listmonk
+
+# Security options
+SecurityLabelDisable=false
+NoNewPrivileges=true
+
+[Service]
+Restart=unless-stopped
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target
+```
+
+#### 3. Volume Quadlet
+
+Create `~/.config/containers/systemd/timeful-listmonk-db-data.volume`:
+
+```ini
+[Volume]
+VolumeName=timeful-listmonk-db-data
+```
+
+#### 4. Configuration Files
+
+Create `~/.config/timeful/listmonk-config.toml`:
+
+```toml
+[app]
+address = "0.0.0.0:9000"
+admin_username = "admin"
+admin_password = "listmonk"
+
+[db]
+host = "timeful-listmonk-db"
+port = 5432
+user = "listmonk"
+password = "listmonk"
+database = "listmonk"
+ssl_mode = "disable"
+max_open = 25
+max_idle = 25
+max_lifetime = "300s"
+```
+
+Create `~/.config/timeful/listmonk-db.env` (optional, for custom password):
+
+```env
+POSTGRES_PASSWORD=your_secure_password
+```
+
+Make sure files have proper permissions:
+
+```bash
+chmod 600 ~/.config/timeful/listmonk-config.toml
+chmod 600 ~/.config/timeful/listmonk-db.env
+```
+
+#### 5. Enable and Start Services
+
+```bash
+# Reload systemd
+systemctl --user daemon-reload
+
+# Enable services
+systemctl --user enable timeful-listmonk-db.service
+systemctl --user enable timeful-listmonk.service
+
+# Start services
+systemctl --user start timeful-listmonk-db.service
+systemctl --user start timeful-listmonk.service
+
+# Initialize Listmonk on first run
+podman exec timeful-listmonk ./listmonk --install
+```
+
+#### 6. Configure Timeful Backend
+
+Update `~/.config/timeful/backend.env` to include Listmonk configuration:
+
+```env
+# ... existing configuration ...
+
+# Listmonk Configuration
+LISTMONK_URL=http://timeful-listmonk:9000
+LISTMONK_USERNAME=admin
+LISTMONK_PASSWORD=listmonk
+LISTMONK_LIST_ID=1
+```
+
+Restart the backend service:
+
+```bash
+systemctl --user restart timeful-backend.service
+```
+
+### Managing Listmonk with Quadlets
+
+```bash
+# Check status
+systemctl --user status timeful-listmonk.service
+systemctl --user status timeful-listmonk-db.service
+
+# View logs
+journalctl --user -u timeful-listmonk.service -f
+journalctl --user -u timeful-listmonk-db.service -f
+
+# Restart services
+systemctl --user restart timeful-listmonk.service
+
+# Stop services
+systemctl --user stop timeful-listmonk.service timeful-listmonk-db.service
+
+# Disable services (won't start on boot)
+systemctl --user disable timeful-listmonk.service timeful-listmonk-db.service
+```
+
+### Backup Listmonk Database (Podman)
+
+```bash
+# Create backup directory
+mkdir -p ~/timeful-backups
+
+# Backup Listmonk database
+podman exec timeful-listmonk-db pg_dump -U listmonk listmonk > ~/timeful-backups/listmonk-backup-$(date +%Y%m%d-%H%M%S).sql
+
+# Restore from backup
+podman exec -i timeful-listmonk-db psql -U listmonk listmonk < ~/timeful-backups/listmonk-backup-YYYYMMDD-HHMMSS.sql
+```
+
+### Rootless Podman with Listmonk
+
+Listmonk works seamlessly with rootless Podman:
+
+- **PostgreSQL** runs as UID 70 (postgres user), automatically mapped to your subuid range
+- **Listmonk** runs as UID 1000 (non-root user), mapped transparently
+- **Volumes** handle permissions automatically
+- **Port 9000** binds successfully with slirp4netns (rootless port binding)
+
+No special configuration needed - everything works out of the box with rootless Podman!
+
+### Troubleshooting Listmonk with Podman
+
+**Check if containers are running**:
+```bash
+podman ps | grep listmonk
+```
+
+**Check database connectivity**:
+```bash
+podman exec timeful-listmonk-db pg_isready -U listmonk
+```
+
+**View detailed logs**:
+```bash
+podman logs timeful-listmonk --tail 50
+podman logs timeful-listmonk-db --tail 50
+```
+
+**Test network connectivity**:
+```bash
+podman exec timeful-listmonk ping -c 3 timeful-listmonk-db
+```
+
+**Verify security settings**:
+```bash
+# Check user IDs
+podman exec timeful-listmonk id
+podman exec timeful-listmonk-db id
+
+# Verify no-new-privileges
+podman inspect timeful-listmonk | grep -i "NoNewPrivileges"
+```
+
+For complete Listmonk configuration and usage instructions, see the [DOCKER.md](./DOCKER.md#self-hosting-listmonk-with-docker-compose) guide.
+
 ## Additional Resources
 
 - [Podman Quadlets Documentation](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html)
 - [systemd.unit Documentation](https://www.freedesktop.org/software/systemd/man/systemd.unit.html)
+- [Listmonk Documentation](https://listmonk.app/docs/)
