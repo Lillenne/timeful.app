@@ -462,7 +462,7 @@ export default {
       return window.__TIMEFUL_CONFIG__?.blogButtonText || 'Blog'
     },
     blogEnabled() {
-      return window.__TIMEFUL_CONFIG__?.blogEnabled !== false
+      return window.__TIMEFUL_CONFIG__?.blogEnabled ?? true
     },
   },
 

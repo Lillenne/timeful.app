@@ -204,7 +204,7 @@ export default {
       return window.__TIMEFUL_CONFIG__?.blogButtonText || 'Blog'
     },
     blogEnabled() {
-      return window.__TIMEFUL_CONFIG__?.blogEnabled !== false
+      return window.__TIMEFUL_CONFIG__?.blogEnabled ?? true
     },
   },
   methods: {
@@ -223,6 +223,9 @@ export default {
     getBlogArticleUrl(path) {
       // Validate path parameter
       if (!path || typeof path !== 'string') {
+        if (process.env.NODE_ENV === 'development' && path !== undefined) {
+          console.warn('[getBlogArticleUrl] Invalid path provided:', path)
+        }
         return this.blogUrl
       }
       // Remove trailing slash from baseUrl if present, and leading slash from path if present
