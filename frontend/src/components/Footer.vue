@@ -221,6 +221,10 @@ export default {
         })
     },
     getBlogArticleUrl(path) {
+      // Validate path parameter
+      if (!path || typeof path !== 'string') {
+        return this.blogUrl
+      }
       // Remove trailing slash from baseUrl if present, and leading slash from path if present
       const cleanBaseUrl = this.blogUrl.replace(/\/$/, '')
       const cleanPath = path.replace(/^\//, '')
