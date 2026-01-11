@@ -116,7 +116,7 @@
           </div>
         </div>
         <!-- Articles -->
-        <div class="tw-flex tw-flex-col tw-gap-2">
+        <div v-if="blogEnabled" class="tw-flex tw-flex-col tw-gap-2">
           <div class="tw-mb-1 tw-font-bold">Articles</div>
           <div>
             <a :href="getBlogArticleUrl('schej-is-now-timeful/')" target="_blank" rel="noopener noreferrer" class="tw-text-sm"
@@ -221,9 +221,8 @@ export default {
         })
     },
     getBlogArticleUrl(path) {
-      const baseUrl = this.blogUrl || 'https://schej-blog.vercel.app/blog/'
       // Remove trailing slash from baseUrl if present, and leading slash from path if present
-      const cleanBaseUrl = baseUrl.replace(/\/$/, '')
+      const cleanBaseUrl = this.blogUrl.replace(/\/$/, '')
       const cleanPath = path.replace(/^\//, '')
       return `${cleanBaseUrl}/${cleanPath}`
     },
