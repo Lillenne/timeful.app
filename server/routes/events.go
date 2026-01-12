@@ -1495,7 +1495,7 @@ func getResponsesMap(responses []models.EventResponse) map[string]*models.Respon
 // @Accept json
 // @Produce json
 // @Param eventId path string true "Event ID"
-// @Param payload body object{scheduledEvent=models.CalendarEvent} true "Scheduled event details"
+// @Param payload body object{scheduledEvent=object{summary=string,startDate=int64,endDate=int64}} true "Scheduled event details with Unix timestamps in milliseconds"
 // @Success 200
 // @Router /events/{eventId}/schedule-event [post]
 func scheduleEvent(c *gin.Context) {
