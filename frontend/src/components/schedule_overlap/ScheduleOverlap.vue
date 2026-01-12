@@ -3605,12 +3605,11 @@ export default {
         endDate = dateToDowDate(this.event.dates, endDate, offset, true)
       }
 
-      // The dates from getDateFromRowCol already represent the correct moment in time (UTC).
-      // They represent the wall-clock time in curTimezone converted to UTC.
-      // For example, if the user selects 2pm in GMT-3, the date is already 17:00 UTC.
-      // We just need to use these dates directly without any further timezone conversion.
-      const tzStartDate = startDate
-      const tzEndDate = endDate
+      // Convert dates from UTC-based timestamps to the selected timezone
+      // The dates from getDateFromRowCol are UTC-based, but represent times that should be 
+      // interpreted as being in curTimezone. We convert them to get the correct UTC time.
+      const tzStartDate = dayjs(startDate).tz(this.curTimezone.value, true).toDate()
+      const tzEndDate = dayjs(endDate).tz(this.curTimezone.value, true).toDate()
 
       // Format email string separated by commas
       const emails = this.respondents.map((r) => {
@@ -3684,12 +3683,11 @@ export default {
         endDate = dateToDowDate(this.event.dates, endDate, offset, true)
       }
 
-      // The dates from getDateFromRowCol already represent the correct moment in time (UTC).
-      // They represent the wall-clock time in curTimezone converted to UTC.
-      // For example, if the user selects 2pm in GMT-3, the date is already 17:00 UTC.
-      // We just need to use these dates directly without any further timezone conversion.
-      const tzStartDate = startDate
-      const tzEndDate = endDate
+      // Convert dates from UTC-based timestamps to the selected timezone
+      // The dates from getDateFromRowCol are UTC-based, but represent times that should be 
+      // interpreted as being in curTimezone. We convert them to get the correct UTC time.
+      const tzStartDate = dayjs(startDate).tz(this.curTimezone.value, true).toDate()
+      const tzEndDate = dayjs(endDate).tz(this.curTimezone.value, true).toDate()
 
       // Format email list
       const emails = this.respondents
