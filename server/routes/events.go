@@ -1499,8 +1499,13 @@ func getResponsesMap(responses []models.EventResponse) map[string]*models.Respon
 // @Success 200
 // @Router /events/{eventId}/schedule-event [post]
 func scheduleEvent(c *gin.Context) {
+	// Accept dates as int64 (milliseconds since epoch) from frontend
 	payload := struct {
-		ScheduledEvent *models.CalendarEvent `json:"scheduledEvent" binding:"required"`
+		ScheduledEvent struct {
+			Summary   string `json:"summary"`
+			StartDate int64  `json:"startDate" binding:"required"`
+			EndDate   int64  `json:"endDate" binding:"required"`
+		} `json:"scheduledEvent" binding:"required"`
 	}{}
 	if err := c.Bind(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, responses.Error{Error: "Invalid request payload"})
@@ -1514,12 +1519,19 @@ func scheduleEvent(c *gin.Context) {
 		return
 	}
 
+	// Convert int64 timestamps to primitive.DateTime
+	scheduledEvent := models.CalendarEvent{
+		Summary:   payload.ScheduledEvent.Summary,
+		StartDate: primitive.DateTime(payload.ScheduledEvent.StartDate),
+		EndDate:   primitive.DateTime(payload.ScheduledEvent.EndDate),
+	}
+
 	// Update the event with the scheduled event details
 	result := db.EventsCollection.FindOneAndUpdate(context.Background(), bson.M{
 		"_id": event.Id,
 	}, bson.M{
 		"$set": bson.M{
-			"scheduledEvent": payload.ScheduledEvent,
+			"scheduledEvent": scheduledEvent,
 		},
 	})
 	err := result.Err()
