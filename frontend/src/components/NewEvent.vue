@@ -59,32 +59,46 @@
           required
         />
 
-        <v-textarea
-          v-model="description"
-          placeholder="Add a description (optional)..."
-          hide-details="auto"
-          solo
-          rows="2"
-          auto-grow
-          counter="5000"
-          maxlength="5000"
-        />
+        <ExpandableSection
+          v-model="showDescriptionLocation"
+          label="Description and location (optional)"
+          labelClass="tw-text-lg tw-text-black"
+          :auto-scroll="false"
+        >
+          <div class="tw-flex tw-flex-col tw-gap-5 tw-pt-2">
+            <v-textarea
+              v-model="description"
+              placeholder="Add a description (optional)..."
+              hide-details="auto"
+              solo
+              rows="2"
+              auto-grow
+              counter="5000"
+              maxlength="5000"
+            />
 
-        <LocationAutocomplete
-          v-model="location"
-          placeholder="Add a location (optional)..."
-          hide-details="auto"
-          solo
-          counter="500"
-          maxlength="500"
-        />
+            <LocationAutocomplete
+              v-model="location"
+              placeholder="Add a location (optional)..."
+              hide-details="auto"
+              solo
+              counter="500"
+              maxlength="500"
+            />
+          </div>
+        </ExpandableSection>
 
-        <SlideToggle
-          v-if="daysOnlyEnabled && !edit"
-          class="tw-w-full"
-          v-model="daysOnly"
-          :options="daysOnlyOptions"
-        />
+        <div>
+          <div class="tw-mb-2 tw-text-lg tw-text-black">
+            Time slots or just dates?
+          </div>
+          <SlideToggle
+            v-if="daysOnlyEnabled && !edit"
+            class="tw-w-full"
+            v-model="daysOnly"
+            :options="daysOnlyOptions"
+          />
+        </div>
 
         <div>
           <v-expand-transition>
@@ -156,17 +170,15 @@
             {{ selectedDateOption === dateOptions.SPECIFIC ? "dates" : "days" }}
             might work?
           </div>
-          <v-select
-            v-if="!edit && !daysOnly"
+          <SlideToggle
+            v-if="!edit"
+            class="tw-mb-4 tw-w-full"
             v-model="selectedDateOption"
-            :items="Object.values(dateOptions)"
-            solo
-            hide-details
-            class="tw-mb-4"
+            :options="dateOptionsList"
           />
 
           <v-expand-transition>
-            <div v-if="selectedDateOption === dateOptions.SPECIFIC || daysOnly">
+            <div v-if="selectedDateOption === dateOptions.SPECIFIC">
               <div class="tw-mb-2 tw-text-xs tw-text-dark-gray">
                 Drag to select multiple dates
               </div>
@@ -218,42 +230,6 @@
           </v-expand-transition>
         </div>
 
-        <v-checkbox
-          v-if="!guestEvent && authUser"
-          v-model="notificationsEnabled"
-          hide-details
-          class="tw-mt-2"
-        >
-          <template v-slot:label>
-            <span class="tw-text-sm tw-text-very-dark-gray"
-              >Email me each time someone joins my event</span
-            >
-          </template>
-        </v-checkbox>
-        <v-checkbox
-          v-else-if="!guestEvent"
-          disabled
-          messages="test"
-          off-icon="mdi-checkbox-blank-off-outline"
-          class="tw-mt-2"
-        >
-          <template v-slot:label>
-            <span class="tw-text-sm"
-              >Email me each time someone joins my event</span
-            >
-          </template>
-          <template v-slot:message="{ key, message }">
-            <div
-              class="tw-pointer-events-auto -tw-mt-1 tw-ml-[32px] tw-text-xs tw-text-dark-gray"
-            >
-              <span class="tw-font-medium tw-text-very-dark-gray"
-                ><a @click="$emit('signIn')">Sign in</a>
-                to use this feature
-              </span>
-            </div>
-          </template>
-        </v-checkbox>
-
         <div class="tw-flex tw-flex-col tw-gap-2">
           <ExpandableSection
             v-if="authUser && !guestEvent"
@@ -300,7 +276,7 @@
 
           <ExpandableSection
             v-model="showAdvancedOptions"
-            label="Advanced options"
+            label="Options"
             :auto-scroll="dialog"
           >
             <div class="tw-flex tw-flex-col tw-gap-5 tw-pt-2">
@@ -315,6 +291,39 @@
                   :items="timeIncrementItems"
                 ></v-select>
               </div>
+              <v-checkbox
+                v-if="!guestEvent && authUser"
+                v-model="notificationsEnabled"
+                hide-details
+              >
+                <template v-slot:label>
+                  <span class="tw-text-sm tw-text-black"
+                    >Email me each time someone joins my event</span
+                  >
+                </template>
+              </v-checkbox>
+              <v-checkbox
+                v-else-if="!guestEvent"
+                disabled
+                messages="test"
+                off-icon="mdi-checkbox-blank-off-outline"
+              >
+                <template v-slot:label>
+                  <span class="tw-text-sm"
+                    >Email me each time someone joins my event</span
+                  >
+                </template>
+                <template v-slot:message="{ key, message }">
+                  <div
+                    class="tw-pointer-events-auto -tw-mt-1 tw-ml-[32px] tw-text-xs tw-text-dark-gray"
+                  >
+                    <span class="tw-font-medium tw-text-very-dark-gray"
+                      ><a @click="$emit('signIn')">Sign in</a>
+                      to use this feature
+                    </span>
+                  </div>
+                </template>
+              </v-checkbox>
               <v-checkbox
                 v-if="authUser && !guestEvent"
                 v-model="collectEmails"
@@ -549,10 +558,10 @@ export default {
     startOnMonday: prefersStartOnMonday(),
     notificationsEnabled: true,
 
-    daysOnly: false,
+    daysOnly: true,
     daysOnlyOptions: Object.freeze([
-      { text: "Dates and times", value: false },
       { text: "Dates only", value: true },
+      { text: "Dates and times", value: false },
     ]),
 
     // Date options
@@ -561,6 +570,9 @@ export default {
       DOW: "Days of the week",
     }),
     selectedDateOption: "Specific dates",
+
+    // Description and location section
+    showDescriptionLocation: false,
 
     // Email reminders
     showEmailReminders: false,
@@ -653,6 +665,12 @@ export default {
         { text: "60 min", value: 60 },
       ]
     },
+    dateOptionsList() {
+      return [
+        { text: this.dateOptions.SPECIFIC, value: this.dateOptions.SPECIFIC },
+        { text: this.dateOptions.DOW, value: this.dateOptions.DOW },
+      ]
+    },
   },
 
   methods: {
@@ -670,9 +688,10 @@ export default {
       this.selectedDays = []
       this.selectedDaysOfWeek = []
       this.notificationsEnabled = true
-      this.daysOnly = false
+      this.daysOnly = true
       this.selectedDateOption = "Specific dates"
       this.emails = []
+      this.showDescriptionLocation = false
       this.showAdvancedOptions = false
       this.blindAvailabilityEnabled = false
       this.sendEmailAfterXResponsesEnabled = false
