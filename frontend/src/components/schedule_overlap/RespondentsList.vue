@@ -609,6 +609,10 @@ export default {
       const startTime = new Date(this.scheduledEvent.startDate).getTime()
       const endTime = new Date(this.scheduledEvent.endDate).getTime()
       
+      // Get time increment (default to 15 minutes if not set)
+      const timeIncrementMinutes = this.event.timeIncrement || 15
+      const timeIncrementMs = timeIncrementMinutes * 60 * 1000
+      
       for (const userId in this.parsedResponses) {
         const response = this.parsedResponses[userId]
         if (!response || !response.availability) {
@@ -621,7 +625,7 @@ export default {
         const availabilitySet = response.availability
         
         // Check each time slot in the scheduled event range
-        for (let time = startTime; time < endTime; time += 15 * 60 * 1000) {
+        for (let time = startTime; time < endTime; time += timeIncrementMs) {
           if (!availabilitySet || !availabilitySet.has(time)) {
             isAvailable = false
             break

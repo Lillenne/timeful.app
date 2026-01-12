@@ -3633,6 +3633,7 @@ export default {
         }
       } catch (error) {
         console.error("Failed to persist scheduled event:", error)
+        this.showError("Failed to save the scheduled event. Please try again.")
       }
 
       // Format email string separated by commas
