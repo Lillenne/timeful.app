@@ -105,8 +105,8 @@ export async function fetchICSFromURL(url) {
  * Create ICS file content from event details
  * @param {Object} eventDetails - Event details
  * @param {string} eventDetails.title - Event title
- * @param {Date} eventDetails.startDate - Event start date (in UTC)
- * @param {Date} eventDetails.endDate - Event end date (in UTC)
+ * @param {Date} eventDetails.startDate - Event start date (JavaScript Date object)
+ * @param {Date} eventDetails.endDate - Event end date (JavaScript Date object)
  * @param {string} eventDetails.description - Event description
  * @param {string} eventDetails.location - Event location
  * @param {Array<string>} eventDetails.attendees - Array of attendee emails
@@ -131,13 +131,51 @@ export function createICSFile(eventDetails) {
   event.location = location || ""
   
   // Set start and end times with timezone
-  // fromJSDate with false parameter creates a UTC time
-  event.startDate = ICAL.Time.fromJSDate(startDate, false)
-  event.endDate = ICAL.Time.fromJSDate(endDate, false)
-  
-  // If timezone is provided, set the TZID parameter on the date-time properties
+  // When timezone is provided, we need to create local times with the timezone set
+  // The incoming dates are UTC times that represent the correct wall-clock time in the target timezone
   if (timezone) {
-    // Get the DTSTART and DTEND properties to set TZID
+    // Extract the wall-clock time components from the incoming UTC dates
+    // These dates were created by dayjs().tz(timezone, true) which shifts the UTC time
+    // to represent the desired local time
+    const startYear = startDate.getUTCFullYear()
+    const startMonth = startDate.getUTCMonth() + 1 // ICAL uses 1-indexed months
+    const startDay = startDate.getUTCDate()
+    const startHour = startDate.getUTCHours()
+    const startMinute = startDate.getUTCMinutes()
+    const startSecond = startDate.getUTCSeconds()
+    
+    const endYear = endDate.getUTCFullYear()
+    const endMonth = endDate.getUTCMonth() + 1
+    const endDay = endDate.getUTCDate()
+    const endHour = endDate.getUTCHours()
+    const endMinute = endDate.getUTCMinutes()
+    const endSecond = endDate.getUTCSeconds()
+    
+    // Create ICAL.Time objects as local times (not UTC)
+    const startTime = new ICAL.Time({
+      year: startYear,
+      month: startMonth,
+      day: startDay,
+      hour: startHour,
+      minute: startMinute,
+      second: startSecond,
+      isDate: false
+    })
+    
+    const endTime = new ICAL.Time({
+      year: endYear,
+      month: endMonth,
+      day: endDay,
+      hour: endHour,
+      minute: endMinute,
+      second: endSecond,
+      isDate: false
+    })
+    
+    event.startDate = startTime
+    event.endDate = endTime
+    
+    // Set the TZID parameter on the date-time properties
     const dtstart = vevent.getFirstProperty("dtstart")
     const dtend = vevent.getFirstProperty("dtend")
     
@@ -147,6 +185,10 @@ export function createICSFile(eventDetails) {
     if (dtend) {
       dtend.setParameter("tzid", timezone)
     }
+  } else {
+    // No timezone provided, use UTC times
+    event.startDate = ICAL.Time.fromJSDate(startDate, false)
+    event.endDate = ICAL.Time.fromJSDate(endDate, false)
   }
 
   // Generate UID using crypto API if available, fallback to timestamp + random

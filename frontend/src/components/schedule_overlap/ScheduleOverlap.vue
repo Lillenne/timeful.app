@@ -3605,11 +3605,15 @@ export default {
         endDate = dateToDowDate(this.event.dates, endDate, offset, true)
       }
 
-      // Convert dates from UTC-based timestamps to the selected timezone
-      // The dates from getDateFromRowCol are UTC-based, but represent times that should be 
-      // interpreted as being in curTimezone. We convert them to get the correct UTC time.
-      const tzStartDate = dayjs(startDate).tz(this.curTimezone.value, true).toDate()
-      const tzEndDate = dayjs(endDate).tz(this.curTimezone.value, true).toDate()
+      // Convert dates to the selected timezone
+      // The dates from getDateFromRowCol represent wall-clock times (e.g., "14:00") stored as UTC.
+      // We need to interpret these wall-clock times as being in curTimezone to get the correct UTC time.
+      // For example, if the date is "2024-01-15T14:00:00Z" and timezone is "America/Sao_Paulo" (GMT-3),
+      // we interpret "14:00" as "14:00 Sao Paulo time" which is "17:00 UTC".
+      const startDateString = startDate.toISOString().slice(0, -1) // Remove 'Z' to get local time string
+      const endDateString = endDate.toISOString().slice(0, -1)
+      const tzStartDate = dayjs.tz(startDateString, this.curTimezone.value).toDate()
+      const tzEndDate = dayjs.tz(endDateString, this.curTimezone.value).toDate()
 
       // Format email string separated by commas
       const emails = this.respondents.map((r) => {
@@ -3683,11 +3687,15 @@ export default {
         endDate = dateToDowDate(this.event.dates, endDate, offset, true)
       }
 
-      // Convert dates from UTC-based timestamps to the selected timezone
-      // The dates from getDateFromRowCol are UTC-based, but represent times that should be 
-      // interpreted as being in curTimezone. We convert them to get the correct UTC time.
-      const tzStartDate = dayjs(startDate).tz(this.curTimezone.value, true).toDate()
-      const tzEndDate = dayjs(endDate).tz(this.curTimezone.value, true).toDate()
+      // Convert dates to the selected timezone
+      // The dates from getDateFromRowCol represent wall-clock times (e.g., "14:00") stored as UTC.
+      // We need to interpret these wall-clock times as being in curTimezone to get the correct UTC time.
+      // For example, if the date is "2024-01-15T14:00:00Z" and timezone is "America/Sao_Paulo" (GMT-3),
+      // we interpret "14:00" as "14:00 Sao Paulo time" which is "17:00 UTC".
+      const startDateString = startDate.toISOString().slice(0, -1) // Remove 'Z' to get local time string
+      const endDateString = endDate.toISOString().slice(0, -1)
+      const tzStartDate = dayjs.tz(startDateString, this.curTimezone.value).toDate()
+      const tzEndDate = dayjs.tz(endDateString, this.curTimezone.value).toDate()
 
       // Format email list
       const emails = this.respondents
