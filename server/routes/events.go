@@ -109,6 +109,8 @@ func InitEvents(router *gin.RouterGroup) {
 	eventRouter.DELETE("/:eventId", middleware.AuthRequired(), deleteEvent)
 	eventRouter.POST("/:eventId/duplicate", middleware.AuthRequired(), duplicateEvent)
 	eventRouter.POST("/:eventId/archive", middleware.AuthRequired(), archiveEvent)
+	// Note: scheduleEvent does not require auth to allow anyone with the link to schedule
+	eventRouter.POST("/:eventId/schedule-event", scheduleEvent)
 }
 
 // @Summary Creates a new event
@@ -1486,4 +1488,58 @@ func getResponsesMap(responses []models.EventResponse) map[string]*models.Respon
 		result[resp.UserId] = resp.Response
 	}
 	return result
+}
+
+// @Summary Schedule an event at a specific time
+// @Tags events
+// @Accept json
+// @Produce json
+// @Param eventId path string true "Event ID"
+// @Param payload body object{scheduledEvent=object{summary=string,startDate=int64,endDate=int64}} true "Scheduled event details with Unix timestamps in milliseconds"
+// @Success 200
+// @Router /events/{eventId}/schedule-event [post]
+func scheduleEvent(c *gin.Context) {
+	// Accept dates as int64 (milliseconds since epoch) from frontend
+	payload := struct {
+		ScheduledEvent struct {
+			Summary   string `json:"summary"`
+			StartDate int64  `json:"startDate" binding:"required"`
+			EndDate   int64  `json:"endDate" binding:"required"`
+		} `json:"scheduledEvent" binding:"required"`
+	}{}
+	if err := c.Bind(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, responses.Error{Error: "Invalid request payload"})
+		return
+	}
+
+	eventId := c.Param("eventId")
+	event := db.GetEventByEitherId(eventId)
+	if event == nil {
+		c.JSON(http.StatusNotFound, responses.Error{Error: errs.EventNotFound})
+		return
+	}
+
+	// Convert int64 timestamps to primitive.DateTime
+	scheduledEvent := models.CalendarEvent{
+		Summary:   payload.ScheduledEvent.Summary,
+		StartDate: primitive.DateTime(payload.ScheduledEvent.StartDate),
+		EndDate:   primitive.DateTime(payload.ScheduledEvent.EndDate),
+	}
+
+	// Update the event with the scheduled event details
+	result := db.EventsCollection.FindOneAndUpdate(context.Background(), bson.M{
+		"_id": event.Id,
+	}, bson.M{
+		"$set": bson.M{
+			"scheduledEvent": scheduledEvent,
+		},
+	})
+	err := result.Err()
+	if err != nil {
+		logger.StdErr.Println(err)
+		c.JSON(http.StatusInternalServerError, responses.Error{Error: "Failed to update event"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
 }

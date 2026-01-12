@@ -819,6 +819,7 @@
                   :show-event-options="showEventOptions"
                   :guestAddedAvailability="guestAddedAvailability"
                   :addingAvailabilityAsGuest="addingAvailabilityAsGuest"
+                  :scheduledEvent="event.scheduledEvent"
                   @toggleShowEventOptions="toggleShowEventOptions"
                   @addAvailability="$emit('addAvailability')"
                   @addAvailabilityAsGuest="$emit('addAvailabilityAsGuest')"
@@ -939,6 +940,7 @@
                   :show-event-options="showEventOptions"
                   :guestAddedAvailability="guestAddedAvailability"
                   :addingAvailabilityAsGuest="addingAvailabilityAsGuest"
+                  :scheduledEvent="event.scheduledEvent"
                   @toggleShowEventOptions="toggleShowEventOptions"
                   @addAvailability="$emit('addAvailability')"
                   @addAvailabilityAsGuest="$emit('addAvailabilityAsGuest')"
@@ -1046,6 +1048,7 @@ import WorkingHoursToggle from "./WorkingHoursToggle.vue"
 import AlertText from "../AlertText.vue"
 import Tooltip from "../Tooltip.vue"
 import ColorLegend from "./ColorLegend.vue"
+import * as EventService from "@/utils/services/EventService"
 
 import dayjs from "dayjs"
 import ObjectID from "bson-objectid"
@@ -3536,8 +3539,40 @@ export default {
       this.state = this.defaultState
     },
 
+    /** Load scheduled event from event data and convert to curScheduledEvent format */
+    loadScheduledEventFromData() {
+      if (!this.event.scheduledEvent) return
+      
+      const { startDate, endDate } = this.event.scheduledEvent
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      
+      // Calculate which column (day) the scheduled event is in
+      const col = this.dates.findIndex((date) => {
+        const dateObj = new Date(date)
+        return dateObj.toDateString() === start.toDateString()
+      })
+      
+      if (col === -1) return // Event is not in the current date range
+      
+      // Calculate which row (time slot) the scheduled event starts at
+      const dayStartMinutes = start.getHours() * 60 + start.getMinutes()
+      const timeslotStartMinutes = this.startHour * 60
+      const row = Math.floor((dayStartMinutes - timeslotStartMinutes) / this.timeslotDuration)
+      
+      // Calculate how many rows (time slots) the event spans
+      const durationMinutes = (end.getTime() - start.getTime()) / (1000 * 60)
+      const numRows = Math.ceil(durationMinutes / this.timeslotDuration)
+      
+      this.curScheduledEvent = {
+        col,
+        row,
+        numRows,
+      }
+    },
+
     /** Redirect user to Google Calendar to finish the creation of the event */
-    confirmScheduleEvent(googleCalendar = true) {
+    async confirmScheduleEvent(googleCalendar = true) {
       if (!this.curScheduledEvent) return
       // if (!isPremiumUser(this.authUser)) {
       //   this.showUpgradeDialog({
@@ -3581,6 +3616,31 @@ export default {
       const tzStartDate = dayjs(startDate).tz(this.curTimezone.value, true).toDate()
       const tzEndDate = dayjs(endDate).tz(this.curTimezone.value, true).toDate()
 
+      // Persist the scheduled event to the database
+      const eventId = this.event.shortId ?? this.event._id
+      try {
+        await EventService.scheduleEvent(eventId, {
+          summary: this.event.name,
+          startDate: tzStartDate.getTime(),
+          endDate: tzEndDate.getTime(),
+        })
+        
+        // Update the local event object with the scheduled event
+        this.event.scheduledEvent = {
+          summary: this.event.name,
+          startDate: tzStartDate.getTime(),
+          endDate: tzEndDate.getTime(),
+        }
+        
+        // Show success message
+        this.showInfo("Event scheduled and saved successfully!")
+      } catch (error) {
+        console.error("Failed to persist scheduled event:", error)
+        this.showError("Failed to save the scheduled event. Please try again.")
+        // Don't proceed with opening calendar if persistence failed
+        return
+      }
+
       // Format email string separated by commas
       const emails = this.respondents.map((r) => {
         // Return email if they are not a guest, otherwise return their name
@@ -3592,8 +3652,6 @@ export default {
         }
       })
       const emailsString = encodeURIComponent(emails.filter(Boolean).join(","))
-
-      const eventId = this.event.shortId ?? this.event._id
 
       let url = ""
       if (googleCalendar) {
@@ -3618,9 +3676,10 @@ export default {
         )}&path=/calendar/action/compose&timezone=${this.curTimezone.value}`
       }
 
-      // Navigate to url and reset state
+      // Open calendar to create event
+      // Note: We keep state as SCHEDULE_EVENT (don't reset to defaultState) so the 
+      // scheduled event remains visible on the calendar after the user returns
       window.open(url, "_blank")
-      this.state = this.defaultState
     },
     
     /** Download ICS file for the scheduled event */
@@ -4614,6 +4673,10 @@ export default {
       const newUrl = new URL(window.location.href)
       newUrl.searchParams.delete("scheduled_event")
       window.history.replaceState({}, document.title, newUrl.toString())
+    } else if (this.event.scheduledEvent) {
+      // Load scheduled event from the event data if it exists
+      this.loadScheduledEventFromData()
+      this.state = this.states.SCHEDULE_EVENT
     } else if (this.showBestTimes) {
       this.state = "best_times"
     } else {

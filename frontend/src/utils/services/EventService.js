@@ -5,3 +5,9 @@ export const archiveEvent = (eventId, archive) => {
     archive: archive,
   })
 }
+
+export const scheduleEvent = (eventId, scheduledEvent) => {
+  return post(`/events/${eventId}/schedule-event`, {
+    scheduledEvent: scheduledEvent,
+  })
+}
