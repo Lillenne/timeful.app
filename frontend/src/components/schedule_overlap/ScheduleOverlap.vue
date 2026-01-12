@@ -3676,7 +3676,9 @@ export default {
         )}&path=/calendar/action/compose&timezone=${this.curTimezone.value}`
       }
 
-      // Navigate to url but keep the scheduled event visible (don't reset state)
+      // Open calendar to create event
+      // Note: We keep state as SCHEDULE_EVENT (don't reset to defaultState) so the 
+      // scheduled event remains visible on the calendar after the user returns
       window.open(url, "_blank")
     },
     
