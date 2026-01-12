@@ -3575,6 +3575,12 @@ export default {
         endDate = dateToDowDate(this.event.dates, endDate, offset, true)
       }
 
+      // Convert dates from UTC-based timestamps to the selected timezone
+      // The dates from getDateFromRowCol are UTC-based, but represent times that should be 
+      // interpreted as being in curTimezone. We convert them to get the correct UTC time.
+      const tzStartDate = dayjs(startDate).tz(this.curTimezone.value, true).toDate()
+      const tzEndDate = dayjs(endDate).tz(this.curTimezone.value, true).toDate()
+
       // Format email string separated by commas
       const emails = this.respondents.map((r) => {
         // Return email if they are not a guest, otherwise return their name
@@ -3592,8 +3598,8 @@ export default {
       let url = ""
       if (googleCalendar) {
         // Format start and end date to be in the format required by gcal (remove -, :, and .000)
-        const start = startDate.toISOString().replace(/([-:]|\.000)/g, "")
-        const end = endDate.toISOString().replace(/([-:]|\.000)/g, "")
+        const start = tzStartDate.toISOString().replace(/([-:]|\.000)/g, "")
+        const end = tzEndDate.toISOString().replace(/([-:]|\.000)/g, "")
 
         // Construct Google Calendar event creation template url
         url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
@@ -3607,7 +3613,7 @@ export default {
         )}&body=${encodeURIComponent(
           "\n\nThis event was scheduled with Timeful: https://timeful.app/e/" +
             eventId
-        )}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&location=${encodeURIComponent(
+        )}&startdt=${tzStartDate.toISOString()}&enddt=${tzEndDate.toISOString()}&location=${encodeURIComponent(
           this.event.location || ""
         )}&path=/calendar/action/compose&timezone=${this.curTimezone.value}`
       }
@@ -3647,6 +3653,12 @@ export default {
         endDate = dateToDowDate(this.event.dates, endDate, offset, true)
       }
 
+      // Convert dates from UTC-based timestamps to the selected timezone
+      // The dates from getDateFromRowCol are UTC-based, but represent times that should be 
+      // interpreted as being in curTimezone. We convert them to get the correct UTC time.
+      const tzStartDate = dayjs(startDate).tz(this.curTimezone.value, true).toDate()
+      const tzEndDate = dayjs(endDate).tz(this.curTimezone.value, true).toDate()
+
       // Format email list
       const emails = this.respondents
         .map((r) => (r.email.length > 0 ? r.email : null))
@@ -3657,13 +3669,14 @@ export default {
       // Create ICS file content
       const icsContent = createICSFile({
         title: this.event.name,
-        startDate,
-        endDate,
+        startDate: tzStartDate,
+        endDate: tzEndDate,
         description: this.event.description 
           ? `${this.event.description}\n\nThis event was scheduled with Timeful: https://timeful.app/e/${eventId}`
           : `\n\nThis event was scheduled with Timeful: https://timeful.app/e/${eventId}`,
         location: this.event.location || "",
         attendees: emails,
+        timezone: this.curTimezone.value,
       })
 
       // Download the ICS file
