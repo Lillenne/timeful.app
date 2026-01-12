@@ -109,6 +109,7 @@ func InitEvents(router *gin.RouterGroup) {
 	eventRouter.DELETE("/:eventId", middleware.AuthRequired(), deleteEvent)
 	eventRouter.POST("/:eventId/duplicate", middleware.AuthRequired(), duplicateEvent)
 	eventRouter.POST("/:eventId/archive", middleware.AuthRequired(), archiveEvent)
+	// Note: scheduleEvent does not require auth to allow anyone with the link to schedule
 	eventRouter.POST("/:eventId/schedule-event", scheduleEvent)
 }
 
