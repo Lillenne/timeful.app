@@ -3661,9 +3661,14 @@ export default {
           startDate: tzStartDate.getTime(),
           endDate: tzEndDate.getTime(),
         }
+        
+        // Show success message
+        this.showInfo("Event scheduled and saved successfully!")
       } catch (error) {
         console.error("Failed to persist scheduled event:", error)
         this.showError("Failed to save the scheduled event. Please try again.")
+        // Don't proceed with opening calendar if persistence failed
+        return
       }
 
       // Format email string separated by commas
@@ -3701,9 +3706,8 @@ export default {
         )}&path=/calendar/action/compose&timezone=${this.curTimezone.value}`
       }
 
-      // Navigate to url and reset state
+      // Navigate to url but keep the scheduled event visible (don't reset state)
       window.open(url, "_blank")
-      this.state = this.defaultState
     },
     
     /** Download ICS file for the scheduled event */
