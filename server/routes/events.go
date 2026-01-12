@@ -1521,8 +1521,7 @@ func scheduleEvent(c *gin.Context) {
 			"scheduledEvent": payload.ScheduledEvent,
 		},
 	})
-	var updatedEvent models.Event
-	err := result.Decode(&updatedEvent)
+	err := result.Err()
 	if err != nil {
 		logger.StdErr.Println(err)
 		c.JSON(http.StatusInternalServerError, responses.Error{Error: "Failed to update event"})
