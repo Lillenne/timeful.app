@@ -88,15 +88,17 @@
           </div>
         </ExpandableSection>
 
-        <div class="tw-mb-2 tw-text-lg tw-text-black">
-          What type of event?
+        <div>
+          <div class="tw-mb-2 tw-text-lg tw-text-black">
+            Time slots or just dates?
+          </div>
+          <SlideToggle
+            v-if="daysOnlyEnabled && !edit"
+            class="tw-w-full"
+            v-model="daysOnly"
+            :options="daysOnlyOptions"
+          />
         </div>
-        <SlideToggle
-          v-if="daysOnlyEnabled && !edit"
-          class="tw-w-full"
-          v-model="daysOnly"
-          :options="daysOnlyOptions"
-        />
 
         <div>
           <v-expand-transition>
