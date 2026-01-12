@@ -1393,14 +1393,17 @@ export default {
           if (num > max) max = num
         }
       } else {
-        for (let i = 0; i < this.event.dates.length; i++) {
-          const date = new Date(this.event.dates[i])
-          for (const time of this.times) {
-            const num = [
-              ...this.getRespondentsForHoursOffset(date, time.hoursOffset),
-            ].filter((r) => this.curRespondentsSet.has(r)).length
+        // Check if dates is initialized before accessing
+        if (this.event.dates && Array.isArray(this.event.dates)) {
+          for (let i = 0; i < this.event.dates.length; i++) {
+            const date = new Date(this.event.dates[i])
+            for (const time of this.times) {
+              const num = [
+                ...this.getRespondentsForHoursOffset(date, time.hoursOffset),
+              ].filter((r) => this.curRespondentsSet.has(r)).length
 
-            if (num > max) max = num
+              if (num > max) max = num
+            }
           }
         }
       }
@@ -1414,6 +1417,11 @@ export default {
     allDays() {
       const days = []
       const datesSoFar = new Set()
+
+      // Return empty array if dates is not initialized
+      if (!this.event.dates || !Array.isArray(this.event.dates)) {
+        return days
+      }
 
       const getDateString = (date) => {
         let dateString = ""
@@ -1566,6 +1574,11 @@ export default {
         this.allDays.map((d) => d.dateObject.getTime())
       )
 
+      // Return empty array if dates is not initialized
+      if (!this.event.dates || !Array.isArray(this.event.dates) || this.event.dates.length === 0) {
+        return monthDays
+      }
+
       // Calculate monthIndex and year from event start date and page num
       const date = new Date(this.event.dates[0])
       const monthIndex = date.getUTCMonth() + this.page
@@ -1630,6 +1643,10 @@ export default {
     },
     /** Returns the text to show for the current month */
     curMonthText() {
+      // Return empty string if dates is not initialized
+      if (!this.event.dates || !Array.isArray(this.event.dates) || this.event.dates.length === 0) {
+        return ""
+      }
       const date = new Date(this.event.dates[0])
       const monthIndex = date.getUTCMonth() + this.page
       const year = date.getUTCFullYear()
@@ -1998,6 +2015,11 @@ export default {
         return this.curTimezone.offset * -1
       }
 
+      // Check if dates is initialized
+      if (!this.event.dates || !Array.isArray(this.event.dates) || this.event.dates.length === 0) {
+        return this.curTimezone.offset * -1
+      }
+
       // Can't just get the offset directly from curTimezone because it doesn't account for dates in the future
       // when daylight savings might be in or out of effect, so instead, we get the timezone for the first date
       // of the event
@@ -2019,6 +2041,10 @@ export default {
     },
     hasNextPage() {
       if (this.event.daysOnly) {
+        // Check if dates is initialized
+        if (!this.event.dates || !Array.isArray(this.event.dates) || this.event.dates.length === 0) {
+          return false
+        }
         const lastDay = new Date(this.event.dates[this.event.dates.length - 1])
         const curDate = new Date(this.event.dates[0])
         const monthIndex = curDate.getUTCMonth() + this.page
@@ -2812,6 +2838,10 @@ export default {
     },
     /** Animate availability for the current page */
     animateAvailabilityForCurrentPage(availability) {
+      // Check if dates is initialized
+      if (!this.event.dates || !Array.isArray(this.event.dates) || this.event.dates.length === 0) {
+        return
+      }
       const pageStartDate = getDateDayOffset(
         new Date(this.event.dates[0]),
         this.page * this.maxDaysPerPage
@@ -4023,6 +4053,10 @@ export default {
     //#region Options
     // -----------------------------------
     getLocalTimezone() {
+      // Check if dates is initialized
+      if (!this.event.dates || !Array.isArray(this.event.dates) || this.event.dates.length === 0) {
+        return "UTC"
+      }
       const split = new Date(this.event.dates[0])
         .toLocaleTimeString("en-us", { timeZoneName: "short" })
         .split(" ")
@@ -4379,13 +4413,16 @@ export default {
         this.event.times
       )
 
-      // Set event dates to start at the new times
-      for (let i = 0; i < this.event.dates.length; ++i) {
-        const date = new Date(this.event.dates[i])
-        date.setTime(date.getTime() - this.timezoneOffset * 60 * 1000)
-        date.setUTCHours(minHours, 0, 0, 0)
-        date.setTime(date.getTime() + this.timezoneOffset * 60 * 1000)
-        this.event.dates[i] = date.toISOString()
+      // Check if dates is initialized
+      if (this.event.dates && Array.isArray(this.event.dates)) {
+        // Set event dates to start at the new times
+        for (let i = 0; i < this.event.dates.length; ++i) {
+          const date = new Date(this.event.dates[i])
+          date.setTime(date.getTime() - this.timezoneOffset * 60 * 1000)
+          date.setUTCHours(minHours, 0, 0, 0)
+          date.setTime(date.getTime() + this.timezoneOffset * 60 * 1000)
+          this.event.dates[i] = date.toISOString()
+        }
       }
 
       // Set event duration to the difference between the max and min hours
@@ -4639,15 +4676,18 @@ export default {
     addEventListener("scroll", this.onScroll)
     if (!this.calendarOnly) {
       const timesEl = document.getElementById("drag-section")
-      if (isTouchEnabled()) {
-        timesEl.addEventListener("touchstart", this.startDrag)
-        timesEl.addEventListener("touchmove", this.moveDrag)
-        timesEl.addEventListener("touchend", this.endDrag)
-        timesEl.addEventListener("touchcancel", this.endDrag)
+      // Check if element exists before adding event listeners
+      if (timesEl) {
+        if (isTouchEnabled()) {
+          timesEl.addEventListener("touchstart", this.startDrag)
+          timesEl.addEventListener("touchmove", this.moveDrag)
+          timesEl.addEventListener("touchend", this.endDrag)
+          timesEl.addEventListener("touchcancel", this.endDrag)
+        }
+        timesEl.addEventListener("mousedown", this.startDrag)
+        timesEl.addEventListener("mousemove", this.moveDrag)
+        timesEl.addEventListener("mouseup", this.endDrag)
       }
-      timesEl.addEventListener("mousedown", this.startDrag)
-      timesEl.addEventListener("mousemove", this.moveDrag)
-      timesEl.addEventListener("mouseup", this.endDrag)
     }
 
     // Parse sign up blocks and responses

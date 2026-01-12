@@ -63,6 +63,11 @@ export const getDateRangeStringForEvent = (event) => {
   let timezone = localStorage["timezone"]
   if (timezone) timezone = JSON.parse(timezone)
 
+  // Check if dates is initialized
+  if (!event.dates || !Array.isArray(event.dates) || event.dates.length === 0) {
+    return ""
+  }
+
   if (event.type === eventTypes.DOW || event.type === eventTypes.GROUP) {
     let s = ""
 
