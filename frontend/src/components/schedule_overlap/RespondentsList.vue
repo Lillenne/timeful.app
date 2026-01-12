@@ -616,14 +616,14 @@ export default {
           continue
         }
         
-        // Check if user has availability that overlaps with the scheduled event
-        let isAvailable = false
+        // Check if user has availability for ALL time slots in the scheduled event
+        let isAvailable = true
         const availabilitySet = response.availability
         
         // Check each time slot in the scheduled event range
         for (let time = startTime; time < endTime; time += 15 * 60 * 1000) {
-          if (availabilitySet && availabilitySet.has(time)) {
-            isAvailable = true
+          if (!availabilitySet || !availabilitySet.has(time)) {
+            isAvailable = false
             break
           }
         }
