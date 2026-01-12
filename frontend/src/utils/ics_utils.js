@@ -105,12 +105,12 @@ export async function fetchICSFromURL(url) {
  * Create ICS file content from event details
  * @param {Object} eventDetails - Event details
  * @param {string} eventDetails.title - Event title
- * @param {Date} eventDetails.startDate - Event start date (JavaScript Date in UTC representing the correct moment)
- * @param {Date} eventDetails.endDate - Event end date (JavaScript Date in UTC representing the correct moment)
+ * @param {Date} eventDetails.startDate - Event start date
+ * @param {Date} eventDetails.endDate - Event end date
  * @param {string} eventDetails.description - Event description
  * @param {string} eventDetails.location - Event location
  * @param {Array<string>} eventDetails.attendees - Array of attendee emails
- * @param {string} eventDetails.timezone - IANA timezone identifier (e.g., "America/New_York") for display
+ * @param {string} eventDetails.timezone - IANA timezone identifier (e.g., "America/New_York") - currently unused
  * @returns {string} ICS file content
  */
 export function createICSFile(eventDetails) {
