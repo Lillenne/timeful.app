@@ -3605,9 +3605,9 @@ export default {
         endDate = dateToDowDate(this.event.dates, endDate, offset, true)
       }
 
-      // Convert dates from local browser time to the selected timezone
-      // The dates from getDateFromRowCol are in local time, but represent times in curTimezone
-      // We need to get the actual UTC time for those timezone-specific times
+      // Convert dates from UTC-based timestamps to the selected timezone
+      // The dates from getDateFromRowCol are UTC-based, but represent times that should be 
+      // interpreted as being in curTimezone. We convert them to get the correct UTC time.
       const tzStartDate = dayjs(startDate).tz(this.curTimezone.value, true).toDate()
       const tzEndDate = dayjs(endDate).tz(this.curTimezone.value, true).toDate()
 
@@ -3683,9 +3683,9 @@ export default {
         endDate = dateToDowDate(this.event.dates, endDate, offset, true)
       }
 
-      // Convert dates from local browser time to the selected timezone
-      // The dates from getDateFromRowCol are in local time, but represent times in curTimezone
-      // We need to get the actual UTC time for those timezone-specific times
+      // Convert dates from UTC-based timestamps to the selected timezone
+      // The dates from getDateFromRowCol are UTC-based, but represent times that should be 
+      // interpreted as being in curTimezone. We convert them to get the correct UTC time.
       const tzStartDate = dayjs(startDate).tz(this.curTimezone.value, true).toDate()
       const tzEndDate = dayjs(endDate).tz(this.curTimezone.value, true).toDate()
 
