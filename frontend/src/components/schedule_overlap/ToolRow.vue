@@ -94,7 +94,7 @@
             <span class="tw-text-sm tw-font-medium tw-text-green">Event Scheduled</span>
           </div>
         </template>
-        <template v-else-if="state !== states.SCHEDULE_EVENT">
+        <template v-else-if="state !== states.SCHEDULE_EVENT && !event.scheduledEvent">
           <v-btn
             outlined
             class="tw-w-full tw-text-blue"
