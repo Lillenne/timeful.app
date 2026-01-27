@@ -3592,7 +3592,6 @@ export default {
       }
       
       if (col === -1) {
-        console.warn('Scheduled event not in current date range', { start, allDays: this.allDays })
         return // Event is not in the current date range
       }
       
@@ -3610,8 +3609,6 @@ export default {
         row,
         numRows,
       }
-      
-      console.log('Loaded scheduled event from data:', this.curScheduledEvent)
     },
 
     /** Redirect user to Google Calendar to finish the creation of the event */
