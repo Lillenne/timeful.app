@@ -3577,13 +3577,24 @@ export default {
       const start = new Date(startDate)
       const end = new Date(endDate)
       
-      // Calculate which column (day) the scheduled event is in
-      const col = this.dates.findIndex((date) => {
-        const dateObj = new Date(date)
-        return dateObj.toDateString() === start.toDateString()
-      })
+      // Find which column (day) the scheduled event is in using allDays
+      let col = -1
+      for (let i = 0; i < this.allDays.length; i++) {
+        const dayObj = this.allDays[i]
+        if (dayObj && dayObj.dateObject) {
+          const dayDate = new Date(dayObj.dateObject)
+          // Compare date strings to handle timezone issues
+          if (dayDate.toDateString() === start.toDateString()) {
+            col = i
+            break
+          }
+        }
+      }
       
-      if (col === -1) return // Event is not in the current date range
+      if (col === -1) {
+        console.warn('Scheduled event not in current date range', { start, allDays: this.allDays })
+        return // Event is not in the current date range
+      }
       
       // Calculate which row (time slot) the scheduled event starts at
       const dayStartMinutes = start.getHours() * 60 + start.getMinutes()
@@ -3599,6 +3610,8 @@ export default {
         row,
         numRows,
       }
+      
+      console.log('Loaded scheduled event from data:', this.curScheduledEvent)
     },
 
     /** Redirect user to Google Calendar to finish the creation of the event */
@@ -3694,7 +3707,9 @@ export default {
           this.event.name
         )}&dates=${start}/${end}&details=${encodeURIComponent(
           "\n\nThis event was scheduled with Timeful: https://timeful.app/e/"
-        )}${eventId}&ctz=${this.curTimezone.value}&add=${emailsString}`
+        )}${eventId}&location=${encodeURIComponent(
+          this.event.location || ""
+        )}&ctz=${this.curTimezone.value}&add=${emailsString}`
       } else {
         url = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(
           this.event.name
