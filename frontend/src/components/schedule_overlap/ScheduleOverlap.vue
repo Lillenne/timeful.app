@@ -3574,39 +3574,45 @@ export default {
       if (!this.event.scheduledEvent) return
       
       const { startDate, endDate } = this.event.scheduledEvent
-      const start = new Date(startDate)
-      const end = new Date(endDate)
       
-      // Find which column (day) the scheduled event is in using allDays
-      let col = -1
-      for (let i = 0; i < this.allDays.length; i++) {
-        const dayObj = this.allDays[i]
-        if (dayObj && dayObj.dateObject) {
-          const dayDate = new Date(dayObj.dateObject)
-          // Compare date strings to handle timezone issues
-          if (dayDate.toDateString() === start.toDateString()) {
-            col = i
+      // The stored dates are UTC timestamps
+      // We need to find where they appear in the current calendar view
+      const startTime = new Date(startDate).getTime()
+      const endTime = new Date(endDate).getTime()
+      
+      // Find the column and row by searching through the calendar grid
+      let foundCol = -1
+      let foundRow = -1
+      
+      // Search through all days and time slots
+      for (let col = 0; col < this.allDays.length; col++) {
+        const day = this.allDays[col]
+        if (!day || !day.dateObject) continue
+        
+        // Check all time slots for this day
+        for (let row = 0; row < this.times.length; row++) {
+          const cellDate = this.getDateFromRowCol(row, col)
+          if (cellDate && cellDate.getTime() === startTime) {
+            foundCol = col
+            foundRow = row
             break
           }
         }
+        if (foundCol !== -1) break
       }
       
-      if (col === -1) {
-        return // Event is not in the current date range
+      if (foundCol === -1 || foundRow === -1) {
+        // Event is not in the current visible date/time range
+        return
       }
-      
-      // Calculate which row (time slot) the scheduled event starts at
-      const dayStartMinutes = start.getHours() * 60 + start.getMinutes()
-      const timeslotStartMinutes = this.startHour * 60
-      const row = Math.floor((dayStartMinutes - timeslotStartMinutes) / this.timeslotDuration)
       
       // Calculate how many rows (time slots) the event spans
-      const durationMinutes = (end.getTime() - start.getTime()) / (1000 * 60)
+      const durationMinutes = (endTime - startTime) / (1000 * 60)
       const numRows = Math.ceil(durationMinutes / this.timeslotDuration)
       
       this.curScheduledEvent = {
-        col,
-        row,
+        col: foundCol,
+        row: foundRow,
         numRows,
       }
     },
@@ -3725,7 +3731,7 @@ export default {
     },
     
     /** Download ICS file for the scheduled event */
-    downloadScheduledEventICS() {
+    async downloadScheduledEventICS() {
       if (!this.curScheduledEvent) return
 
       this.$posthog.capture("schedule_event_ics_download")
@@ -3784,15 +3790,30 @@ export default {
       const filename = `${this.event.name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim()}.ics`
       downloadICSFile(icsContent, filename)
 
-      this.$posthog.capture("schedule_event_ics_downloaded")
+      // Persist the scheduled event to the database (same as Google/Outlook)
+      try {
+        await EventService.scheduleEvent(eventId, {
+          summary: this.event.name,
+          startDate: tzStartDate.getTime(),
+          endDate: tzEndDate.getTime(),
+        })
+        
+        // Update the local event object with the scheduled event
+        this.event.scheduledEvent = {
+          summary: this.event.name,
+          startDate: tzStartDate.getTime(),
+          endDate: tzEndDate.getTime(),
+        }
+        
+        this.$posthog.capture("schedule_event_ics_downloaded")
 
-      // Show success message
-      if (this.showSnackbar) {
-        this.showInfo("Event downloaded as ICS file! You can now attach it to an email or add it to your calendar.")
+        // Show success message
+        this.showInfo("Event scheduled and ICS file downloaded successfully!")
+      } catch (error) {
+        console.error("Failed to persist scheduled event:", error)
+        // Still show a message about the download even if persistence failed
+        this.showInfo("ICS file downloaded! Note: Could not save scheduled time to database.")
       }
-
-      // Reset state
-      this.state = this.defaultState
     },
     //#endregion
 

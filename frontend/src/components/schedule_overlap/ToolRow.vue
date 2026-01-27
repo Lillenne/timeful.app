@@ -87,7 +87,14 @@
         style="width: 181.5px"
         class="tw-hidden sm:tw-flex"
       >
-        <template v-if="state !== states.SCHEDULE_EVENT">
+        <template v-if="event.scheduledEvent && state !== states.SCHEDULE_EVENT">
+          <!-- Show indicator that event is already scheduled -->
+          <div class="tw-flex tw-w-full tw-items-center tw-justify-center tw-rounded tw-border tw-border-green tw-bg-green-50 tw-px-3 tw-py-2">
+            <v-icon small class="tw-mr-1 tw-text-green">mdi-calendar-check</v-icon>
+            <span class="tw-text-sm tw-font-medium tw-text-green">Event Scheduled</span>
+          </div>
+        </template>
+        <template v-else-if="state !== states.SCHEDULE_EVENT">
           <v-btn
             outlined
             class="tw-w-full tw-text-blue"
