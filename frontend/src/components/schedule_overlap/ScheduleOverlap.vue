@@ -324,7 +324,7 @@
                             </template>
 
                             <!-- Scheduled event -->
-                            <div v-if="state === states.SCHEDULE_EVENT">
+                            <div v-if="state === states.SCHEDULE_EVENT || (event.scheduledEvent && curScheduledEvent)">
                               <div
                                 v-if="
                                   (dragStart && dragStart.col === d) ||
@@ -4709,7 +4709,8 @@ export default {
     } else if (this.event.scheduledEvent) {
       // Load scheduled event from the event data if it exists
       this.loadScheduledEventFromData()
-      this.state = this.states.SCHEDULE_EVENT
+      // Don't set state to SCHEDULE_EVENT - let it show in read-only mode
+      // The scheduled event visual will still display because curScheduledEvent is set
     } else if (this.showBestTimes) {
       this.state = "best_times"
     } else {
