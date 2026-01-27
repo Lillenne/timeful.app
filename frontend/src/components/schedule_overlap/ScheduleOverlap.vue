@@ -3733,8 +3733,6 @@ export default {
     /** Download ICS file for the scheduled event */
     async downloadScheduledEventICS() {
       if (!this.curScheduledEvent) return
-
-      this.$posthog.capture("schedule_event_ics_download")
       
       // Get start date, and end date from the area that the user has dragged out
       const { col, row, numRows } = this.curScheduledEvent
@@ -3789,6 +3787,9 @@ export default {
       // Download the ICS file
       const filename = `${this.event.name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim()}.ics`
       downloadICSFile(icsContent, filename)
+      
+      // Track the ICS download
+      this.$posthog.capture("schedule_event_ics_downloaded")
 
       // Persist the scheduled event to the database (same as Google/Outlook)
       try {
@@ -3804,13 +3805,12 @@ export default {
           startDate: tzStartDate.getTime(),
           endDate: tzEndDate.getTime(),
         }
-        
-        this.$posthog.capture("schedule_event_ics_downloaded")
 
         // Show success message
         this.showInfo("Event scheduled and ICS file downloaded successfully!")
       } catch (error) {
         console.error("Failed to persist scheduled event:", error)
+        this.$posthog.capture("schedule_event_ics_persistence_failed")
         // Still show a message about the download even if persistence failed
         this.showInfo("ICS file downloaded! Note: Could not save scheduled time to database.")
       }
