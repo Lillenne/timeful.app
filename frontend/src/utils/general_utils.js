@@ -110,7 +110,7 @@ export const processEvent = (event) => {
   }
 
   event.startTime = dateToTimeNum(new Date(startDate), true)
-  event.endTime = (event.startTime + event.duration) % 24
+  event.endTime = (event.startTime + (event.duration ?? 0)) % 24
 }
 
 /** Checks whether email is a valid email */
