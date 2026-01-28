@@ -94,8 +94,13 @@ export const dataURItoBlob = (dataURI) => {
 
 /** Reformats the given event object to the format we want */
 export const processEvent = (event) => {
-  // Check if dates is initialized
-  if (!event.dates || !Array.isArray(event.dates) || event.dates.length === 0) {
+  // Only process if event has dates
+  if (!event || !event.dates || !Array.isArray(event.dates) || event.dates.length === 0) {
+    // Set default values to prevent errors
+    if (event) {
+      event.startTime = event.startTime ?? 0
+      event.endTime = event.endTime ?? 0
+    }
     return
   }
 
