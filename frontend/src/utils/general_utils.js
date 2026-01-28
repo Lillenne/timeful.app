@@ -94,13 +94,23 @@ export const dataURItoBlob = (dataURI) => {
 
 /** Reformats the given event object to the format we want */
 export const processEvent = (event) => {
+  // Only process if event has dates
+  if (!event || !event.dates || !Array.isArray(event.dates) || event.dates.length === 0) {
+    // Set default values to prevent errors
+    if (event) {
+      event.startTime = event.startTime ?? 0
+      event.endTime = event.endTime ?? 0
+    }
+    return
+  }
+
   let startDate = event.dates[0]
   if (event.type === eventTypes.DOW || event.type === eventTypes.GROUP) {
     startDate = dateToDowDate(event.dates, startDate, 0, true)
   }
 
   event.startTime = dateToTimeNum(new Date(startDate), true)
-  event.endTime = (event.startTime + event.duration) % 24
+  event.endTime = (event.startTime + (event.duration ?? 0)) % 24
 }
 
 /** Checks whether email is a valid email */
