@@ -157,7 +157,7 @@
             might work?
           </div>
           <v-select
-            v-if="!edit && !daysOnly"
+            v-if="!edit"
             v-model="selectedDateOption"
             :items="Object.values(dateOptions)"
             solo
@@ -166,7 +166,7 @@
           />
 
           <v-expand-transition>
-            <div v-if="selectedDateOption === dateOptions.SPECIFIC || daysOnly">
+            <div v-if="selectedDateOption === dateOptions.SPECIFIC">
               <div class="tw-mb-2 tw-text-xs tw-text-dark-gray">
                 Drag to select multiple dates
               </div>
@@ -696,14 +696,32 @@ export default {
       let type = ""
       if (this.daysOnly) {
         duration = 0
-        type = eventTypes.SPECIFIC_DATES
-
-        for (const day of this.selectedDays) {
-          const date = new Date(`${day} 00:00:00Z`)
-          dates.push(date)
-        }
-
         this.specificTimesEnabled = false
+        
+        // Handle both SPECIFIC_DATES and DOW when daysOnly is true
+        if (this.selectedDateOption === this.dateOptions.SPECIFIC) {
+          type = eventTypes.SPECIFIC_DATES
+          
+          for (const day of this.selectedDays) {
+            const date = new Date(`${day} 00:00:00Z`)
+            dates.push(date)
+          }
+        } else if (this.selectedDateOption === this.dateOptions.DOW) {
+          type = eventTypes.DOW
+          
+          this.selectedDaysOfWeek.sort((a, b) => a - b)
+          this.selectedDaysOfWeek = this.selectedDaysOfWeek.filter(
+            (dayIndex) => {
+              return this.startOnMonday ? dayIndex !== 0 : dayIndex !== 7
+            }
+          )
+          for (const dayIndex of this.selectedDaysOfWeek) {
+            const day = dayIndexToDayString[dayIndex]
+            // For daysOnly with DOW, use midnight UTC
+            const date = new Date(`${day} 00:00:00Z`)
+            dates.push(date)
+          }
+        }
       } else {
         const startTimeString = timeNumToTimeString(this.startTime)
         if (this.selectedDateOption === this.dateOptions.SPECIFIC) {
@@ -923,12 +941,28 @@ export default {
         }
 
         if (this.event.daysOnly) {
-          this.selectedDateOption = this.dateOptions.SPECIFIC
-          const selectedDays = []
-          for (let date of this.event.dates) {
-            selectedDays.push(getISODateString(date, true))
+          // Handle both SPECIFIC_DATES and DOW for daysOnly events
+          if (this.event.type === eventTypes.SPECIFIC_DATES) {
+            this.selectedDateOption = this.dateOptions.SPECIFIC
+            const selectedDays = []
+            for (let date of this.event.dates) {
+              selectedDays.push(getISODateString(date, true))
+            }
+            this.selectedDays = selectedDays
+          } else if (this.event.type === eventTypes.DOW) {
+            this.selectedDateOption = this.dateOptions.DOW
+            const selectedDaysOfWeek = []
+            for (let date of this.event.dates) {
+              date = getDateWithTimezone(date)
+
+              if (this.event.startOnMonday && date.getUTCDay() === 0) {
+                selectedDaysOfWeek.push(7)
+              } else {
+                selectedDaysOfWeek.push(date.getUTCDay())
+              }
+            }
+            this.selectedDaysOfWeek = selectedDaysOfWeek
           }
-          this.selectedDays = selectedDays
         } else {
           if (this.event.type === eventTypes.SPECIFIC_DATES) {
             this.selectedDateOption = this.dateOptions.SPECIFIC
