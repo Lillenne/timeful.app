@@ -709,13 +709,12 @@ export default {
         } else if (this.selectedDateOption === this.dateOptions.DOW) {
           type = eventTypes.DOW
           
-          this.selectedDaysOfWeek.sort((a, b) => a - b)
-          this.selectedDaysOfWeek = this.selectedDaysOfWeek.filter(
-            (dayIndex) => {
+          const filteredDaysOfWeek = [...this.selectedDaysOfWeek]
+            .sort((a, b) => a - b)
+            .filter((dayIndex) => {
               return this.startOnMonday ? dayIndex !== 0 : dayIndex !== 7
-            }
-          )
-          for (const dayIndex of this.selectedDaysOfWeek) {
+            })
+          for (const dayIndex of filteredDaysOfWeek) {
             const day = dayIndexToDayString[dayIndex]
             // For daysOnly with DOW, use midnight UTC
             const date = new Date(`${day} 00:00:00Z`)
@@ -737,13 +736,12 @@ export default {
         } else if (this.selectedDateOption === this.dateOptions.DOW) {
           type = eventTypes.DOW
 
-          this.selectedDaysOfWeek.sort((a, b) => a - b)
-          this.selectedDaysOfWeek = this.selectedDaysOfWeek.filter(
-            (dayIndex) => {
+          const filteredDaysOfWeek = [...this.selectedDaysOfWeek]
+            .sort((a, b) => a - b)
+            .filter((dayIndex) => {
               return this.startOnMonday ? dayIndex !== 0 : dayIndex !== 7
-            }
-          )
-          for (const dayIndex of this.selectedDaysOfWeek) {
+            })
+          for (const dayIndex of filteredDaysOfWeek) {
             const day = dayIndexToDayString[dayIndex]
             let date = dayjs.tz(
               `${day} ${startTimeString}`,
