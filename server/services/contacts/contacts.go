@@ -32,7 +32,7 @@ func SearchContacts(user *models.User, query string) ([]models.User, *errs.Googl
 	if !ok || calendarAccount.OAuth2CalendarAuth == nil {
 		return nil, &errs.GoogleAPIError{
 			Code:    400,
-			Message: "Google Calendar account not connected. Please connect your Google Calendar account to use this feature.",
+			Message: "Cannot search contacts: Google Calendar account not connected. Contact search requires an active Google Calendar connection.",
 			Status:  "INVALID_ARGUMENT",
 		}
 	}
