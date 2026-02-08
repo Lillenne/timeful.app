@@ -260,7 +260,9 @@ You need to create 9 email templates in Listmonk. Below are the details for each
 </html>
 ```
 
-### Template 7: Initial Reminder Email (Configurable ID)
+### Template 7: Initial Reminder Email
+
+**Note**: This template has a configurable ID set via `LISTMONK_INITIAL_EMAIL_REMINDER_ID` in your `.env` file. The template number here (7) is just for organization in this document - you can create this template with any ID in Listmonk.
 
 **Purpose**: Sent immediately when someone is added to the reminder list
 
@@ -309,7 +311,9 @@ You need to create 9 email templates in Listmonk. Below are the details for each
 </html>
 ```
 
-### Template 8: Second Reminder Email (Configurable ID)
+### Template 8: Second Reminder Email
+
+**Note**: This template has a configurable ID set via `LISTMONK_SECOND_EMAIL_REMINDER_ID` in your `.env` file. The template number here (8) is just for organization in this document - you can create this template with any ID in Listmonk.
 
 **Purpose**: Sent 24 hours after initial reminder if no response
 
@@ -351,7 +355,9 @@ You need to create 9 email templates in Listmonk. Below are the details for each
 </html>
 ```
 
-### Template 9: Final Reminder Email (Configurable ID)
+### Template 9: Final Reminder Email
+
+**Note**: This template has a configurable ID set via `LISTMONK_FINAL_EMAIL_REMINDER_ID` in your `.env` file. The template number here (9) is just for organization in this document - you can create this template with any ID in Listmonk.
 
 **Purpose**: Sent 72 hours after initial reminder if no response (last reminder)
 
