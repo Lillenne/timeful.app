@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"schej.it/server/logger"
 )
 
@@ -163,7 +164,7 @@ func SendEmailAddSubscriberIfNotExist(email string, templateId int, data bson.M,
 }
 
 // ScheduleReminderEmails schedules three reminder emails for an event
-// Returns a slice of ScheduledEmailReminder objects to be stored in the Remindee model
+// Returns a slice of bson.M objects to be stored in the Remindee model's Reminders field
 func ScheduleReminderEmails(email string, ownerName string, eventName string, eventId string) []interface{} {
 	if os.Getenv("LISTMONK_ENABLED") == "false" {
 		return []interface{}{}
@@ -194,23 +195,24 @@ func ScheduleReminderEmails(email string, ownerName string, eventName string, ev
 		AddUserToListmonk(email, "", "", "", nil, false)
 	}
 
-	// Create scheduled reminders
+	// Create scheduled reminders as bson.M for storage
 	now := time.Now()
+	falseBool := false
 	reminders := []interface{}{
 		bson.M{
 			"templateId":  initialEmailReminderId,
 			"scheduledAt": primitive.NewDateTimeFromTime(now),
-			"sent":        false,
+			"sent":        &falseBool,
 		},
 		bson.M{
 			"templateId":  secondEmailReminderId,
 			"scheduledAt": primitive.NewDateTimeFromTime(now.Add(24 * time.Hour)),
-			"sent":        false,
+			"sent":        &falseBool,
 		},
 		bson.M{
 			"templateId":  finalEmailReminderId,
 			"scheduledAt": primitive.NewDateTimeFromTime(now.Add(72 * time.Hour)),
-			"sent":        false,
+			"sent":        &falseBool,
 		},
 	}
 
@@ -413,11 +415,9 @@ func CancelScheduledReminders(eventsCollection *mongo.Collection, eventId string
 		ctx,
 		filter,
 		update,
-		&mongo.UpdateOptions{
-			ArrayFilters: &mongo.ArrayFilters{
-				Filters: arrayFilters,
-			},
-		},
+		options.Update().SetArrayFilters(options.ArrayFilters{
+			Filters: arrayFilters,
+		}),
 	)
 
 	if err != nil {
