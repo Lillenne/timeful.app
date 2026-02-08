@@ -3,6 +3,12 @@
  */
 
 import ICAL from "ical.js"
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+import timezone from "dayjs/plugin/timezone"
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 /**
  * Parse ICS file content and extract calendar events
@@ -105,15 +111,16 @@ export async function fetchICSFromURL(url) {
  * Create ICS file content from event details
  * @param {Object} eventDetails - Event details
  * @param {string} eventDetails.title - Event title
- * @param {Date} eventDetails.startDate - Event start date
- * @param {Date} eventDetails.endDate - Event end date
+ * @param {Date} eventDetails.startDate - Event start date (in UTC)
+ * @param {Date} eventDetails.endDate - Event end date (in UTC)
  * @param {string} eventDetails.description - Event description
  * @param {string} eventDetails.location - Event location
  * @param {Array<string>} eventDetails.attendees - Array of attendee emails
+ * @param {string} eventDetails.timezone - IANA timezone identifier (e.g., "America/New_York")
  * @returns {string} ICS file content
  */
 export function createICSFile(eventDetails) {
-  const { title, startDate, endDate, description, location, attendees = [] } = eventDetails
+  const { title, startDate, endDate, description, location, attendees = [], timezone } = eventDetails
 
   const comp = new ICAL.Component(["vcalendar", [], []])
   comp.updatePropertyWithValue("prodid", "-//Timeful//Timeful App//EN")
@@ -129,9 +136,54 @@ export function createICSFile(eventDetails) {
   event.description = description || ""
   event.location = location || ""
   
-  // Set start and end times
-  event.startDate = ICAL.Time.fromJSDate(startDate, false)
-  event.endDate = ICAL.Time.fromJSDate(endDate, false)
+  // Set start and end times with timezone
+  if (timezone) {
+    // When timezone is provided, we need to create local time values (not UTC)
+    // The incoming dates are UTC times that represent the correct moment
+    // We convert them to local time in the specified timezone for the ICS file
+    
+    const localStart = dayjs(startDate).tz(timezone)
+    const localEnd = dayjs(endDate).tz(timezone)
+    
+    // Create ICAL.Time as local time (not UTC)
+    const startTime = new ICAL.Time({
+      year: localStart.year(),
+      month: localStart.month() + 1, // dayjs months are 0-indexed, ICAL months are 1-indexed
+      day: localStart.date(),
+      hour: localStart.hour(),
+      minute: localStart.minute(),
+      second: localStart.second(),
+      isDate: false
+    })
+    
+    const endTime = new ICAL.Time({
+      year: localEnd.year(),
+      month: localEnd.month() + 1,
+      day: localEnd.date(),
+      hour: localEnd.hour(),
+      minute: localEnd.minute(),
+      second: localEnd.second(),
+      isDate: false
+    })
+    
+    event.startDate = startTime
+    event.endDate = endTime
+    
+    // Set the TZID parameter on the date-time properties
+    const dtstart = vevent.getFirstProperty("dtstart")
+    const dtend = vevent.getFirstProperty("dtend")
+    
+    if (dtstart) {
+      dtstart.setParameter("tzid", timezone)
+    }
+    if (dtend) {
+      dtend.setParameter("tzid", timezone)
+    }
+  } else {
+    // No timezone provided, use UTC times
+    event.startDate = ICAL.Time.fromJSDate(startDate, false)
+    event.endDate = ICAL.Time.fromJSDate(endDate, false)
+  }
 
   // Generate UID using crypto API if available, fallback to timestamp + random
   let uid

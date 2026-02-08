@@ -172,6 +172,18 @@
                     user.lastName +
                     (respondentIfNeeded(user._id) ? "*" : "")
                   }}
+                  <v-icon
+                    v-if="scheduledEvent && isAvailableForScheduledEvent[user._id]"
+                    small
+                    class="tw-ml-1 tw-text-green"
+                    >mdi-check-circle</v-icon
+                  >
+                  <v-icon
+                    v-else-if="scheduledEvent && !isAvailableForScheduledEvent[user._id]"
+                    small
+                    class="tw-ml-1 tw-text-red"
+                    >mdi-close-circle</v-icon
+                  >
                 </div>
                 <div
                   v-if="isOwner && event.collectEmails"
@@ -461,6 +473,7 @@ export default {
     showEventOptions: { type: Boolean, required: true },
     guestAddedAvailability: { type: Boolean, required: true },
     addingAvailabilityAsGuest: { type: Boolean, required: true },
+    scheduledEvent: { type: Object, default: null },
   },
 
   data() {
@@ -587,6 +600,42 @@ export default {
     },
     respondentsListMaxHeight() {
       return Math.max(this.desktopMaxHeight, this.respondentsListMinHeight)
+    },
+    /** Check if a respondent is available for the scheduled event */
+    isAvailableForScheduledEvent() {
+      if (!this.scheduledEvent) return {}
+      
+      const availabilityMap = {}
+      const startTime = new Date(this.scheduledEvent.startDate).getTime()
+      const endTime = new Date(this.scheduledEvent.endDate).getTime()
+      
+      // Get time increment (default to 15 minutes if not set)
+      const timeIncrementMinutes = this.event.timeIncrement || 15
+      const timeIncrementMs = timeIncrementMinutes * 60 * 1000
+      
+      for (const userId in this.parsedResponses) {
+        const response = this.parsedResponses[userId]
+        if (!response || !response.availability) {
+          availabilityMap[userId] = false
+          continue
+        }
+        
+        // Check if user has availability for ALL time slots in the scheduled event
+        let isAvailable = true
+        const availabilitySet = response.availability
+        
+        // Check each time slot in the scheduled event range
+        for (let time = startTime; time < endTime; time += timeIncrementMs) {
+          if (!availabilitySet || !availabilitySet.has(time)) {
+            isAvailable = false
+            break
+          }
+        }
+        
+        availabilityMap[userId] = isAvailable
+      }
+      
+      return availabilityMap
     },
   },
 

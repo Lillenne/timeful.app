@@ -324,7 +324,7 @@
                             </template>
 
                             <!-- Scheduled event -->
-                            <div v-if="state === states.SCHEDULE_EVENT">
+                            <div v-if="state === states.SCHEDULE_EVENT || (event.scheduledEvent && curScheduledEvent)">
                               <div
                                 v-if="
                                   (dragStart && dragStart.col === d) ||
@@ -819,6 +819,7 @@
                   :show-event-options="showEventOptions"
                   :guestAddedAvailability="guestAddedAvailability"
                   :addingAvailabilityAsGuest="addingAvailabilityAsGuest"
+                  :scheduledEvent="event.scheduledEvent"
                   @toggleShowEventOptions="toggleShowEventOptions"
                   @addAvailability="$emit('addAvailability')"
                   @addAvailabilityAsGuest="$emit('addAvailabilityAsGuest')"
@@ -939,6 +940,7 @@
                   :show-event-options="showEventOptions"
                   :guestAddedAvailability="guestAddedAvailability"
                   :addingAvailabilityAsGuest="addingAvailabilityAsGuest"
+                  :scheduledEvent="event.scheduledEvent"
                   @toggleShowEventOptions="toggleShowEventOptions"
                   @addAvailability="$emit('addAvailability')"
                   @addAvailabilityAsGuest="$emit('addAvailabilityAsGuest')"
@@ -1046,6 +1048,7 @@ import WorkingHoursToggle from "./WorkingHoursToggle.vue"
 import AlertText from "../AlertText.vue"
 import Tooltip from "../Tooltip.vue"
 import ColorLegend from "./ColorLegend.vue"
+import * as EventService from "@/utils/services/EventService"
 
 import dayjs from "dayjs"
 import ObjectID from "bson-objectid"
@@ -3566,8 +3569,56 @@ export default {
       this.state = this.defaultState
     },
 
+    /** Load scheduled event from event data and convert to curScheduledEvent format */
+    loadScheduledEventFromData() {
+      if (!this.event.scheduledEvent) return
+      
+      const { startDate, endDate } = this.event.scheduledEvent
+      
+      // The stored dates are UTC timestamps
+      // We need to find where they appear in the current calendar view
+      const startTime = new Date(startDate).getTime()
+      const endTime = new Date(endDate).getTime()
+      
+      // Find the column and row by searching through the calendar grid
+      let foundCol = -1
+      let foundRow = -1
+      
+      // Search through all days and time slots
+      for (let col = 0; col < this.allDays.length; col++) {
+        const day = this.allDays[col]
+        if (!day || !day.dateObject) continue
+        
+        // Check all time slots for this day
+        for (let row = 0; row < this.times.length; row++) {
+          const cellDate = this.getDateFromRowCol(row, col)
+          if (cellDate && cellDate.getTime() === startTime) {
+            foundCol = col
+            foundRow = row
+            break
+          }
+        }
+        if (foundCol !== -1) break
+      }
+      
+      if (foundCol === -1 || foundRow === -1) {
+        // Event is not in the current visible date/time range
+        return
+      }
+      
+      // Calculate how many rows (time slots) the event spans
+      const durationMinutes = (endTime - startTime) / (1000 * 60)
+      const numRows = Math.ceil(durationMinutes / this.timeslotDuration)
+      
+      this.curScheduledEvent = {
+        col: foundCol,
+        row: foundRow,
+        numRows,
+      }
+    },
+
     /** Redirect user to Google Calendar to finish the creation of the event */
-    confirmScheduleEvent(googleCalendar = true) {
+    async confirmScheduleEvent(googleCalendar = true) {
       if (!this.curScheduledEvent) return
       // if (!isPremiumUser(this.authUser)) {
       //   this.showUpgradeDialog({
@@ -3605,6 +3656,37 @@ export default {
         endDate = dateToDowDate(this.event.dates, endDate, offset, true)
       }
 
+      // Convert dates from UTC-based timestamps to the selected timezone
+      // The dates from getDateFromRowCol are UTC-based, but represent times that should be 
+      // interpreted as being in curTimezone. We convert them to get the correct UTC time.
+      const tzStartDate = dayjs(startDate).tz(this.curTimezone.value, true).toDate()
+      const tzEndDate = dayjs(endDate).tz(this.curTimezone.value, true).toDate()
+
+      // Persist the scheduled event to the database
+      const eventId = this.event.shortId ?? this.event._id
+      try {
+        await EventService.scheduleEvent(eventId, {
+          summary: this.event.name,
+          startDate: tzStartDate.getTime(),
+          endDate: tzEndDate.getTime(),
+        })
+        
+        // Update the local event object with the scheduled event
+        this.event.scheduledEvent = {
+          summary: this.event.name,
+          startDate: tzStartDate.getTime(),
+          endDate: tzEndDate.getTime(),
+        }
+        
+        // Show success message
+        this.showInfo("Event scheduled and saved successfully!")
+      } catch (error) {
+        console.error("Failed to persist scheduled event:", error)
+        this.showError("Failed to save the scheduled event. Please try again.")
+        // Don't proceed with opening calendar if persistence failed
+        return
+      }
+
       // Format email string separated by commas
       const emails = this.respondents.map((r) => {
         // Return email if they are not a guest, otherwise return their name
@@ -3617,41 +3699,40 @@ export default {
       })
       const emailsString = encodeURIComponent(emails.filter(Boolean).join(","))
 
-      const eventId = this.event.shortId ?? this.event._id
-
       let url = ""
       if (googleCalendar) {
         // Format start and end date to be in the format required by gcal (remove -, :, and .000)
-        const start = startDate.toISOString().replace(/([-:]|\.000)/g, "")
-        const end = endDate.toISOString().replace(/([-:]|\.000)/g, "")
+        const start = tzStartDate.toISOString().replace(/([-:]|\.000)/g, "")
+        const end = tzEndDate.toISOString().replace(/([-:]|\.000)/g, "")
 
         // Construct Google Calendar event creation template url
         url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
           this.event.name
         )}&dates=${start}/${end}&details=${encodeURIComponent(
           "\n\nThis event was scheduled with Timeful: https://timeful.app/e/"
-        )}${eventId}&ctz=${this.curTimezone.value}&add=${emailsString}`
+        )}${eventId}&location=${encodeURIComponent(
+          this.event.location || ""
+        )}&ctz=${this.curTimezone.value}&add=${emailsString}`
       } else {
         url = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(
           this.event.name
         )}&body=${encodeURIComponent(
           "\n\nThis event was scheduled with Timeful: https://timeful.app/e/" +
             eventId
-        )}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&location=${encodeURIComponent(
+        )}&startdt=${tzStartDate.toISOString()}&enddt=${tzEndDate.toISOString()}&location=${encodeURIComponent(
           this.event.location || ""
         )}&path=/calendar/action/compose&timezone=${this.curTimezone.value}`
       }
 
-      // Navigate to url and reset state
+      // Open calendar to create event
+      // Note: We keep state as SCHEDULE_EVENT (don't reset to defaultState) so the 
+      // scheduled event remains visible on the calendar after the user returns
       window.open(url, "_blank")
-      this.state = this.defaultState
     },
     
     /** Download ICS file for the scheduled event */
-    downloadScheduledEventICS() {
+    async downloadScheduledEventICS() {
       if (!this.curScheduledEvent) return
-
-      this.$posthog.capture("schedule_event_ics_download")
       
       // Get start date, and end date from the area that the user has dragged out
       const { col, row, numRows } = this.curScheduledEvent
@@ -3677,6 +3758,12 @@ export default {
         endDate = dateToDowDate(this.event.dates, endDate, offset, true)
       }
 
+      // Convert dates from UTC-based timestamps to the selected timezone
+      // The dates from getDateFromRowCol are UTC-based, but represent times that should be 
+      // interpreted as being in curTimezone. We convert them to get the correct UTC time.
+      const tzStartDate = dayjs(startDate).tz(this.curTimezone.value, true).toDate()
+      const tzEndDate = dayjs(endDate).tz(this.curTimezone.value, true).toDate()
+
       // Format email list
       const emails = this.respondents
         .map((r) => (r.email.length > 0 ? r.email : null))
@@ -3687,28 +3774,46 @@ export default {
       // Create ICS file content
       const icsContent = createICSFile({
         title: this.event.name,
-        startDate,
-        endDate,
+        startDate: tzStartDate,
+        endDate: tzEndDate,
         description: this.event.description 
           ? `${this.event.description}\n\nThis event was scheduled with Timeful: https://timeful.app/e/${eventId}`
           : `\n\nThis event was scheduled with Timeful: https://timeful.app/e/${eventId}`,
         location: this.event.location || "",
         attendees: emails,
+        timezone: this.curTimezone.value,
       })
 
       // Download the ICS file
       const filename = `${this.event.name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim()}.ics`
       downloadICSFile(icsContent, filename)
-
+      
+      // Track the ICS download
       this.$posthog.capture("schedule_event_ics_downloaded")
 
-      // Show success message
-      if (this.showSnackbar) {
-        this.showInfo("Event downloaded as ICS file! You can now attach it to an email or add it to your calendar.")
-      }
+      // Persist the scheduled event to the database (same as Google/Outlook)
+      try {
+        await EventService.scheduleEvent(eventId, {
+          summary: this.event.name,
+          startDate: tzStartDate.getTime(),
+          endDate: tzEndDate.getTime(),
+        })
+        
+        // Update the local event object with the scheduled event
+        this.event.scheduledEvent = {
+          summary: this.event.name,
+          startDate: tzStartDate.getTime(),
+          endDate: tzEndDate.getTime(),
+        }
 
-      // Reset state
-      this.state = this.defaultState
+        // Show success message
+        this.showInfo("Event scheduled and ICS file downloaded successfully!")
+      } catch (error) {
+        console.error("Failed to persist scheduled event:", error)
+        this.$posthog.capture("schedule_event_ics_persistence_failed")
+        // Still show a message about the download even if persistence failed
+        this.showInfo("ICS file downloaded! Note: Could not save scheduled time to database.")
+      }
     },
     //#endregion
 
@@ -4638,6 +4743,11 @@ export default {
       const newUrl = new URL(window.location.href)
       newUrl.searchParams.delete("scheduled_event")
       window.history.replaceState({}, document.title, newUrl.toString())
+    } else if (this.event.scheduledEvent) {
+      // Load scheduled event from the event data if it exists
+      this.loadScheduledEventFromData()
+      // Don't set state to SCHEDULE_EVENT - let it show in read-only mode
+      // The scheduled event visual will still display because curScheduledEvent is set
     } else if (this.showBestTimes) {
       this.state = "best_times"
     } else {
