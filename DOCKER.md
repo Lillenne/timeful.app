@@ -354,7 +354,7 @@ docker compose up -d
 docker compose up -d listmonk-db listmonk
 ```
 
-The first startup may take a few extra seconds as it initializes the database schema.
+The database schema is automatically initialized on first startup. The initialization and upgrade commands run on every container start but are idempotent (they only make changes when needed), so subsequent startups are fast.
 
 **4. Access Listmonk Admin Interface**
 
