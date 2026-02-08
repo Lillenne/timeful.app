@@ -31,9 +31,9 @@ func SearchContacts(user *models.User, query string) ([]models.User, *errs.Googl
 	calendarAccount, ok := user.CalendarAccounts[calendarAccountKey]
 	if !ok || calendarAccount.OAuth2CalendarAuth == nil {
 		return nil, &errs.GoogleAPIError{
-			Code:    403,
-			Message: "Google Calendar account not connected",
-			Status:  "PERMISSION_DENIED",
+			Code:    400,
+			Message: "Google Calendar account not connected. Please connect your Google Calendar account to use this feature.",
+			Status:  "INVALID_ARGUMENT",
 		}
 	}
 	calendarAuth := calendarAccount.OAuth2CalendarAuth
