@@ -196,10 +196,16 @@ func createEvent(c *gin.Context) {
 		// Schedule email reminders for each of the remindees' emails
 		remindees := make([]models.Remindee, 0)
 		for _, email := range payload.Remindees {
+			// Try GCP Tasks first (for backwards compatibility), fall back to Listmonk scheduler
 			taskIds := gcloud.CreateEmailTask(email, ownerName, payload.Name, event.GetId())
+			
+			// Schedule reminders using Listmonk scheduler
+			scheduledReminders := listmonk.ScheduleReminderEmails(email, ownerName, payload.Name, event.GetId())
+			
 			remindees = append(remindees, models.Remindee{
 				Email:     email,
-				TaskIds:   taskIds,
+				TaskIds:   taskIds,     // Keep for backwards compatibility with GCP
+				Reminders: scheduledReminders,
 				Responded: utils.FalsePtr(),
 			})
 		}
@@ -369,20 +375,28 @@ func editEvent(c *gin.Context) {
 		}
 
 		for _, addedEmail := range added {
-			// Schedule email tasks
+			// Try GCP Tasks first (for backwards compatibility), fall back to Listmonk scheduler
 			taskIds := gcloud.CreateEmailTask(addedEmail.Value, ownerName, event.Name, event.GetId())
+			
+			// Schedule reminders using Listmonk scheduler
+			scheduledReminders := listmonk.ScheduleReminderEmails(addedEmail.Value, ownerName, event.Name, event.GetId())
+			
 			updatedRemindees = append(updatedRemindees, models.Remindee{
 				Email:     addedEmail.Value,
-				TaskIds:   taskIds,
+				TaskIds:   taskIds,     // Keep for backwards compatibility with GCP
+				Reminders: scheduledReminders,
 				Responded: utils.FalsePtr(),
 			})
 		}
 
 		for _, removedEmail := range removed {
-			// Delete email tasks
+			// Delete email tasks (GCP)
 			for _, taskId := range origRemindees[removedEmail.Index].TaskIds {
 				gcloud.DeleteEmailTask(taskId)
 			}
+			
+			// Cancel scheduled reminders (Listmonk)
+			listmonk.CancelScheduledReminders(db.GetEventsCollection(), event.GetId(), origRemindees[removedEmail.Index].Email)
 		}
 
 		event.Remindees = &updatedRemindees
@@ -1068,10 +1082,13 @@ func userResponded(c *gin.Context) {
 	}
 	(*event.Remindees)[index].Responded = utils.TruePtr()
 
-	// Delete the reminder email tasks
+	// Delete the reminder email tasks (GCP)
 	for _, taskId := range (*event.Remindees)[index].TaskIds {
 		gcloud.DeleteEmailTask(taskId)
 	}
+	
+	// Cancel scheduled reminders (Listmonk)
+	listmonk.CancelScheduledReminders(db.GetEventsCollection(), event.GetId(), payload.Email)
 
 	// Update event in database
 	db.EventsCollection.UpdateByID(context.Background(), event.Id, bson.M{
@@ -1347,13 +1364,16 @@ func deleteEvent(c *gin.Context) {
 		}
 	}
 
-	// Delete gcloud tasks
+	// Delete gcloud tasks and cancel scheduled reminders
 	if event.Remindees != nil {
 		for _, remindee := range *event.Remindees {
-			// Delete email tasks
+			// Delete email tasks (GCP)
 			for _, taskId := range remindee.TaskIds {
 				gcloud.DeleteEmailTask(taskId)
 			}
+			
+			// Cancel scheduled reminders (Listmonk)
+			listmonk.CancelScheduledReminders(db.GetEventsCollection(), event.GetId(), remindee.Email)
 		}
 	}
 

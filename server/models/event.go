@@ -14,9 +14,17 @@ const (
 
 // Object containing information associated with the remindee
 type Remindee struct {
-	Email     string   `json:"email" bson:"email,omitempty"`
-	TaskIds   []string `json:"-" bson:"taskIds,omitempty"` // Task IDs of the scheduled emails
-	Responded *bool    `json:"responded" bson:"responded,omitempty"`
+	Email     string                 `json:"email" bson:"email,omitempty"`
+	TaskIds   []string               `json:"-" bson:"taskIds,omitempty"`           // Deprecated: GCP Task IDs (kept for backwards compatibility)
+	Reminders []ScheduledEmailReminder `json:"-" bson:"reminders,omitempty"`        // Scheduled email reminders
+	Responded *bool                  `json:"responded" bson:"responded,omitempty"`
+}
+
+// ScheduledEmailReminder represents a scheduled reminder email
+type ScheduledEmailReminder struct {
+	TemplateId int                `json:"templateId" bson:"templateId,omitempty"`
+	ScheduledAt primitive.DateTime `json:"scheduledAt" bson:"scheduledAt,omitempty"`
+	Sent        *bool              `json:"sent" bson:"sent,omitempty"`
 }
 
 type SignUpBlock struct {

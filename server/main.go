@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -23,6 +24,7 @@ import (
 	"schej.it/server/logger"
 	"schej.it/server/routes"
 	"schej.it/server/services/gcloud"
+	"schej.it/server/services/listmonk"
 	"schej.it/server/slackbot"
 	"schej.it/server/utils"
 
@@ -120,6 +122,11 @@ func main() {
 	// Init google cloud stuff
 	closeTasks := gcloud.InitTasks()
 	defer closeTasks()
+
+	// Start reminder email scheduler for Listmonk
+	ctx, cancelScheduler := context.WithCancel(context.Background())
+	defer cancelScheduler()
+	go listmonk.StartReminderEmailScheduler(ctx, db.GetEventsCollection())
 
 	// Session
 	store := cookie.NewStore([]byte("secret"))
