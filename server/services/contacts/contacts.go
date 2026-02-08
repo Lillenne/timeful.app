@@ -27,7 +27,16 @@ func SearchContacts(user *models.User, query string) ([]models.User, *errs.Googl
 	}
 
 	// Set calendar auth to the user's primary google calendar account
-	calendarAuth := user.CalendarAccounts[utils.GetCalendarAccountKey(user.Email, models.GoogleCalendarType)].OAuth2CalendarAuth
+	calendarAccountKey := utils.GetCalendarAccountKey(user.Email, models.GoogleCalendarType)
+	calendarAccount, ok := user.CalendarAccounts[calendarAccountKey]
+	if !ok || calendarAccount.OAuth2CalendarAuth == nil {
+		return nil, &errs.GoogleAPIError{
+			Code:    403,
+			Message: "Google Calendar account not connected",
+			Status:  "PERMISSION_DENIED",
+		}
+	}
+	calendarAuth := calendarAccount.OAuth2CalendarAuth
 
 	// Search contacts
 	response := services.CallApi(
