@@ -81,7 +81,7 @@ services:
       - ./listmonk-config.toml:/listmonk/config.toml:ro
     networks:
       - timeful-network
-    command: ["./listmonk"]
+    command: ["sh", "-c", "./listmonk --install --idempotent --yes && ./listmonk --upgrade --yes && ./listmonk"]
     # Security options
     security_opt:
       - no-new-privileges:true

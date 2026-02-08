@@ -486,21 +486,20 @@ Timeful can be integrated with [Listmonk](https://listmonk.app/), a self-hosted 
 The easiest way to run Listmonk with Podman is using `podman-compose`:
 
 ```bash
+# First, copy the example configuration file
+cp listmonk-config-example.toml listmonk-config.toml
+
+# Edit the configuration file with your secure passwords
+nano listmonk-config.toml
+
 # Start all services including Listmonk
 podman-compose up -d
 
 # Or start only Listmonk services
 podman-compose up -d listmonk-db listmonk
-
-# Initialize Listmonk database on first run
-podman exec timeful-listmonk ./listmonk --install
 ```
 
-Access Listmonk at http://localhost:9000 with default credentials:
-- Username: `admin`
-- Password: `listmonk`
-
-**⚠️ IMPORTANT**: Change these credentials after first login!
+The database schema is automatically initialized on first startup. Access Listmonk at http://localhost:9000 with the credentials you configured in `listmonk-config.toml`.
 
 For complete Listmonk configuration instructions, see the [DOCKER.md](./DOCKER.md#self-hosting-listmonk-with-docker-compose) guide. All instructions apply to Podman as well.
 
@@ -586,8 +585,8 @@ Volume=%h/.config/timeful/listmonk-config.toml:/listmonk/config.toml:ro
 # Environment
 Environment=TZ=Etc/UTC
 
-# Command
-Exec=./listmonk
+# Command - automatically initialize/upgrade database on startup
+Exec=sh -c "./listmonk --install --idempotent --yes && ./listmonk --upgrade --yes && ./listmonk"
 
 # Security options
 SecurityLabelDisable=false
