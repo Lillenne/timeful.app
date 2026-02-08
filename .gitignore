@@ -8,3 +8,4 @@ deploy_scripts/reboot_log.txt
 .aider*
 .env
 config.js
+listmonk-config.toml

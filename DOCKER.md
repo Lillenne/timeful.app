@@ -311,9 +311,40 @@ Two additional services are defined for Listmonk:
 
 #### Quick Start with Listmonk
 
-**1. Start Listmonk Services**
+**1. Create Configuration File**
 
-The Listmonk services are included in the compose files but you can start them explicitly:
+Copy the example configuration file and customize it with secure passwords:
+
+```bash
+# Copy the example configuration
+cp listmonk-config-example.toml listmonk-config.toml
+
+# Edit the configuration file
+nano listmonk-config.toml
+```
+
+Update the following in `listmonk-config.toml`:
+- `admin_username`: Your desired admin username
+- `admin_password`: A strong password for the admin account
+- `password` (in [db] section): Should match `LISTMONK_DB_PASSWORD` in your `.env` file
+
+**Important**: Use strong passwords! Generate secure passwords with:
+```bash
+openssl rand -base64 32
+```
+
+**2. Configure Environment Variables**
+
+Edit your `.env` file and set the database password:
+
+```bash
+# Listmonk Database Password
+LISTMONK_DB_PASSWORD=your_secure_password_here
+```
+
+**3. Start Listmonk Services**
+
+The Listmonk container automatically initializes the database on first run:
 
 ```bash
 # Start all services including Listmonk
@@ -323,36 +354,21 @@ docker compose up -d
 docker compose up -d listmonk-db listmonk
 ```
 
-**2. Initialize Listmonk**
+The first startup may take a few extra seconds as it initializes the database schema.
 
-On first run, you need to install Listmonk's database schema:
-
-```bash
-# Run the installation
-docker compose exec listmonk ./listmonk --install
-
-# This will create the necessary database tables
-```
-
-**3. Access Listmonk Admin Interface**
+**4. Access Listmonk Admin Interface**
 
 Open your browser and navigate to http://localhost:9000
 
-Default credentials (from `listmonk-config.toml`):
-- **Username**: `admin`
-- **Password**: `listmonk`
+Log in with the credentials you set in `listmonk-config.toml`:
+- **Username**: Your configured admin username
+- **Password**: Your configured admin password
 
-**⚠️ IMPORTANT**: Change these credentials immediately after first login!
-
-**4. Configure Listmonk**
+**5. Configure Listmonk**
 
 After logging in:
 
-a. **Change Admin Password**:
-   - Go to Settings → Users
-   - Update the admin password
-
-b. **Configure SMTP Settings** (required for sending emails):
+a. **Configure SMTP Settings** (required for sending emails):
    - Go to Settings → SMTP
    - Add your SMTP server details (e.g., Gmail, SendGrid, Mailgun, Amazon SES)
    - Test the connection
@@ -366,25 +382,25 @@ b. **Configure SMTP Settings** (required for sending emails):
    Password: your-app-password
    ```
 
-c. **Create a Mailing List**:
+b. **Create a Mailing List**:
    - Go to Lists → Create New
    - Name your list (e.g., "Timeful Users")
    - Note the List ID (you'll need this for the `.env` file)
 
-d. **Create Email Templates** (optional):
+c. **Create Email Templates** (optional):
    - Go to Campaigns → Templates
    - Create templates for event reminders and notifications
    - Note the Template IDs
 
-**5. Configure Timeful to Use Listmonk**
+**6. Configure Timeful to Use Listmonk**
 
 Edit your `.env` file and add/update these variables:
 
 ```env
 # Listmonk Configuration
 LISTMONK_URL=http://listmonk:9000
-LISTMONK_USERNAME=admin
-LISTMONK_PASSWORD=your_new_admin_password
+LISTMONK_USERNAME=your_admin_username
+LISTMONK_PASSWORD=your_admin_password
 LISTMONK_LIST_ID=1
 
 # Optional: Email Template IDs (if you created custom templates)
@@ -392,32 +408,8 @@ LISTMONK_INITIAL_EMAIL_REMINDER_ID=1
 LISTMONK_SECOND_EMAIL_REMINDER_ID=2
 LISTMONK_FINAL_EMAIL_REMINDER_ID=3
 
-# Optional: Change Listmonk database password (recommended for production)
-LISTMONK_DB_PASSWORD=your_secure_password
-
 # Optional: Change Listmonk port
 LISTMONK_PORT=9000
-```
-
-**6. Update Configuration File**
-
-If you changed the database password or admin credentials:
-
-Edit `listmonk-config.toml` in the repository root:
-
-```toml
-[app]
-address = "0.0.0.0:9000"
-admin_username = "admin"
-admin_password = "your_new_password"
-
-[db]
-host = "listmonk-db"
-port = 5432
-user = "listmonk"
-password = "your_secure_db_password"
-database = "listmonk"
-ssl_mode = "disable"
 ```
 
 **7. Restart Services**

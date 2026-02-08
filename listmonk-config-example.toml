@@ -1,0 +1,25 @@
+[app]
+# Interface and port where the app will run its webserver.
+address = "0.0.0.0:9000"
+
+# BasicAuth credentials for the admin interface.
+# ⚠️  SECURITY WARNING: Change these credentials before first use!
+# RECOMMENDED: Generate secure passwords with: openssl rand -base64 32
+admin_username = "admin"
+admin_password = "changeme"
+
+# Database.
+[db]
+host = "listmonk-db"
+port = 5432
+user = "listmonk"
+# ⚠️  SECURITY: This password should match LISTMONK_DB_PASSWORD in your .env file
+password = "changeme"
+database = "listmonk"
+# SSL is disabled for local Docker networking. For production with external databases,
+# consider enabling SSL by setting ssl_mode = "require" or "verify-full"
+ssl_mode = "disable"
+max_open = 25
+max_idle = 25
+max_lifetime = "300s"
+
