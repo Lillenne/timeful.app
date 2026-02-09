@@ -323,7 +323,7 @@
       >
         <template v-if="!isEditing && !isScheduling">
           <v-btn
-            v-if="!event.daysOnly && numResponses > 0"
+            v-if="numResponses > 0"
             text
             class="tw-text-white"
             @click="scheduleEvent"
