@@ -20,6 +20,16 @@ window.__TIMEFUL_CONFIG__ = {
   // Useful for privacy-focused deployments
   disableAnalytics: false,
 
+  // Enable advertising (Google AdSense)
+  // Set to true to enable ads - disabled by default for privacy
+  // When false, advertising scripts will not load even if user consents
+  enableAdvertising: false,
+
+  // Enable Google Fonts
+  // Set to true to load DM Sans font from Google Fonts CDN
+  // When false, uses system font stack for better privacy and performance
+  enableGoogleFonts: false,
+
   // Mapbox API key (optional - for address autocomplete)
   // Leave empty to disable address autocomplete feature
   // Get this from: https://www.mapbox.com/

@@ -27,14 +27,14 @@
       })(window, document, "script", "dataLayer", "GTM-M677X6V")
           }
 
-          // Google AdSense removed to disable unnecessary ads and trackers
-          // if (consentData?.preferences?.advertising) {
-          //   var script = document.createElement("script")
-          //   script.src =
-          //     "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4082178684015354"
-          //   script.crossOrigin = "anonymous"
-          //   document.head.appendChild(script)
-          // }
+          // Check if advertising is disabled via config
+          if (window.__TIMEFUL_CONFIG__?.enableAdvertising && consentData?.preferences?.advertising) {
+            var script = document.createElement("script")
+            script.src =
+              "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4082178684015354"
+            script.crossOrigin = "anonymous"
+            document.head.appendChild(script)
+          }
         } catch (error) {
           console.error("Error loading tracking scripts:", error)
         }
@@ -77,9 +77,28 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css"
     />
-    <!-- Google Fonts removed to disable unnecessary trackers - using system fonts instead -->
     <!-- Load runtime config -->
     <script src="<%= BASE_URL %>config.js"></script>
+    <!-- Conditionally load Google Fonts based on config -->
+    <script>
+      if (window.__TIMEFUL_CONFIG__?.enableGoogleFonts) {
+        var preconnect1 = document.createElement("link")
+        preconnect1.rel = "preconnect"
+        preconnect1.href = "https://fonts.googleapis.com"
+        document.head.appendChild(preconnect1)
+
+        var preconnect2 = document.createElement("link")
+        preconnect2.rel = "preconnect"
+        preconnect2.href = "https://fonts.gstatic.com"
+        preconnect2.crossOrigin = "anonymous"
+        document.head.appendChild(preconnect2)
+
+        var fontLink = document.createElement("link")
+        fontLink.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap"
+        fontLink.rel = "stylesheet"
+        document.head.appendChild(fontLink)
+      }
+    </script>
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->
