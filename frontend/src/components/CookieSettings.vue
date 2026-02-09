@@ -48,8 +48,7 @@
         </div>
       </div>
 
-      <!-- Advertising cookies section removed - no ads/trackers -->
-      <!-- <div class="tw-rounded-lg tw-border tw-bg-white tw-p-5">
+      <div v-if="isAdvertisingEnabled" class="tw-rounded-lg tw-border tw-bg-white tw-p-5">
         <div>
           <v-checkbox v-model="preferences.advertising">
             <template v-slot:label>
@@ -72,7 +71,7 @@
             sites.
           </p>
         </div>
-      </div> -->
+      </div>
     </div>
 
     <div class="tw-flex tw-flex-wrap tw-gap-2">
@@ -108,9 +107,14 @@ export default {
       preferences: {
         necessary: true,
         analytics: true,
-        advertising: false, // No advertising cookies
+        advertising: false, // Default to off
       },
     }
+  },
+  computed: {
+    isAdvertisingEnabled() {
+      return window.__TIMEFUL_CONFIG__?.enableAdvertising || false
+    },
   },
   mounted() {
     this.loadCurrentSettings()
@@ -131,7 +135,8 @@ export default {
       this.preferences = {
         necessary: true,
         analytics: true,
-        advertising: false, // No advertising cookies
+        // Enable advertising only if enableAdvertising config is true
+        advertising: window.__TIMEFUL_CONFIG__?.enableAdvertising || false,
       }
       this.saveConsent()
     },
