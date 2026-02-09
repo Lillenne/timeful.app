@@ -14,16 +14,20 @@ Timeful uses Listmonk for sending various transactional emails including:
 
 You need to create 9 email templates in Listmonk. Below are the details for each template.
 
-### Template 1: Everyone Responded Notification (ID: 8)
+**Note**: All template IDs are now configurable via environment variables! Set them in your `.env` file using the variables documented in `.env.example`. The IDs shown below (8, 9, 10, etc.) are the default fallback values if environment variables are not set.
+
+### Template 1: Everyone Responded Notification
+
+**Environment Variable**: `LISTMONK_EVERYONE_RESPONDED_TEMPLATE_ID` (default: 8)
 
 **Purpose**: Sent to event owner when all attendees have responded
 
 **Template Variables**:
-- `{{ .ownerName }}` - First name of the event owner
-- `{{ .eventName }}` - Name of the event
-- `{{ .eventUrl }}` - URL to view the event
+- `{{ .Tx.Data.ownerName }}` - First name of the event owner
+- `{{ .Tx.Data.eventName }}` - Name of the event
+- `{{ .Tx.Data.eventUrl }}` - URL to view the event
 
-**Subject Line**: `Everyone has responded to {{ .eventName }}! 🎉`
+**Subject Line**: `Everyone has responded to {{ .Tx.Data.eventName }}! 🎉`
 
 **HTML Body**:
 ```html
@@ -36,15 +40,15 @@ You need to create 9 email templates in Listmonk. Below are the details for each
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="background-color: #f8f9fa; border-radius: 10px; padding: 30px; margin-bottom: 20px;">
-        <h1 style="color: #2563eb; margin-top: 0;">Great news, {{ .ownerName }}! 🎉</h1>
+        <h1 style="color: #2563eb; margin-top: 0;">Great news, {{ .Tx.Data.ownerName }}! 🎉</h1>
         <p style="font-size: 16px; margin-bottom: 20px;">
-            Everyone has responded to your event <strong>{{ .eventName }}</strong>!
+            Everyone has responded to your event <strong>{{ .Tx.Data.eventName }}</strong>!
         </p>
         <p style="font-size: 16px; margin-bottom: 25px;">
             You can now view all the responses and find the best time for your event.
         </p>
         <div style="text-align: center;">
-            <a href="{{ .eventUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">View Responses</a>
+            <a href="{{ .Tx.Data.eventUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">View Responses</a>
         </div>
     </div>
     <div style="color: #6b7280; font-size: 14px; text-align: center; margin-top: 30px;">
@@ -54,16 +58,18 @@ You need to create 9 email templates in Listmonk. Below are the details for each
 </html>
 ```
 
-### Template 2: Availability Group Invite (ID: 9)
+### Template 2: Availability Group Invite
+
+**Environment Variable**: `LISTMONK_AVAILABILITY_GROUP_INVITE_TEMPLATE_ID` (default: 9)
 
 **Purpose**: Sent when someone is invited to an availability group
 
 **Template Variables**:
-- `{{ .ownerName }}` - First name of the person who invited them
-- `{{ .groupName }}` - Name of the availability group
-- `{{ .groupUrl }}` - URL to view the group
+- `{{ .Tx.Data.ownerName }}` - First name of the person who invited them
+- `{{ .Tx.Data.groupName }}` - Name of the availability group
+- `{{ .Tx.Data.groupUrl }}` - URL to view the group
 
-**Subject Line**: `{{ .ownerName }} invited you to {{ .groupName }}`
+**Subject Line**: `{{ .Tx.Data.ownerName }} invited you to {{ .Tx.Data.groupName }}`
 
 **HTML Body**:
 ```html
@@ -78,13 +84,13 @@ You need to create 9 email templates in Listmonk. Below are the details for each
     <div style="background-color: #f8f9fa; border-radius: 10px; padding: 30px; margin-bottom: 20px;">
         <h1 style="color: #2563eb; margin-top: 0;">You've been invited! 📅</h1>
         <p style="font-size: 16px; margin-bottom: 20px;">
-            <strong>{{ .ownerName }}</strong> has invited you to join the availability group <strong>{{ .groupName }}</strong>.
+            <strong>{{ .Tx.Data.ownerName }}</strong> has invited you to join the availability group <strong>{{ .Tx.Data.groupName }}</strong>.
         </p>
         <p style="font-size: 16px; margin-bottom: 25px;">
             Share your availability to help find times that work for everyone.
         </p>
         <div style="text-align: center;">
-            <a href="{{ .groupUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">View Group</a>
+            <a href="{{ .Tx.Data.groupUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">View Group</a>
         </div>
     </div>
     <div style="color: #6b7280; font-size: 14px; text-align: center; margin-top: 30px;">
@@ -94,17 +100,19 @@ You need to create 9 email templates in Listmonk. Below are the details for each
 </html>
 ```
 
-### Template 3: Someone Responded (Events - ID: 10)
+### Template 3: Someone Responded (Events)
+
+**Environment Variable**: `LISTMONK_SOMEONE_RESPONDED_EVENT_TEMPLATE_ID` (default: 10)
 
 **Purpose**: Sent to event owner when someone responds to a non-group event
 
 **Template Variables**:
-- `{{ .ownerName }}` - First name of the event owner
-- `{{ .eventName }}` - Name of the event
-- `{{ .respondentName }}` - Name of the person who responded
-- `{{ .eventUrl }}` - URL to view the event
+- `{{ .Tx.Data.ownerName }}` - First name of the event owner
+- `{{ .Tx.Data.eventName }}` - Name of the event
+- `{{ .Tx.Data.respondentName }}` - Name of the person who responded
+- `{{ .Tx.Data.eventUrl }}` - URL to view the event
 
-**Subject Line**: `{{ .respondentName }} responded to {{ .eventName }}`
+**Subject Line**: `{{ .Tx.Data.respondentName }} responded to {{ .Tx.Data.eventName }}`
 
 **HTML Body**:
 ```html
@@ -119,13 +127,13 @@ You need to create 9 email templates in Listmonk. Below are the details for each
     <div style="background-color: #f8f9fa; border-radius: 10px; padding: 30px; margin-bottom: 20px;">
         <h1 style="color: #2563eb; margin-top: 0;">New response received! 📋</h1>
         <p style="font-size: 16px; margin-bottom: 20px;">
-            Hi {{ .ownerName }},
+            Hi {{ .Tx.Data.ownerName }},
         </p>
         <p style="font-size: 16px; margin-bottom: 20px;">
-            <strong>{{ .respondentName }}</strong> has responded to your event <strong>{{ .eventName }}</strong>.
+            <strong>{{ .Tx.Data.respondentName }}</strong> has responded to your event <strong>{{ .Tx.Data.eventName }}</strong>.
         </p>
         <div style="text-align: center; margin-top: 25px;">
-            <a href="{{ .eventUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">View Response</a>
+            <a href="{{ .Tx.Data.eventUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">View Response</a>
         </div>
     </div>
     <div style="color: #6b7280; font-size: 14px; text-align: center; margin-top: 30px;">
@@ -135,16 +143,18 @@ You need to create 9 email templates in Listmonk. Below are the details for each
 </html>
 ```
 
-### Template 4: Added as Attendee (ID: 11)
+### Template 4: Added as Attendee
+
+**Environment Variable**: `LISTMONK_ADDED_ATTENDEE_TEMPLATE_ID` (default: 11)
 
 **Purpose**: Sent when someone is added as an attendee to an availability group
 
 **Template Variables**:
-- `{{ .ownerName }}` - First name of the person who added them
-- `{{ .groupName }}` - Name of the availability group
-- `{{ .groupUrl }}` - URL to view the group
+- `{{ .Tx.Data.ownerName }}` - First name of the person who added them
+- `{{ .Tx.Data.groupName }}` - Name of the availability group
+- `{{ .Tx.Data.groupUrl }}` - URL to view the group
 
-**Subject Line**: `{{ .ownerName }} added you to {{ .groupName }}`
+**Subject Line**: `{{ .Tx.Data.ownerName }} added you to {{ .Tx.Data.groupName }}`
 
 **HTML Body**:
 ```html
@@ -159,13 +169,13 @@ You need to create 9 email templates in Listmonk. Below are the details for each
     <div style="background-color: #f8f9fa; border-radius: 10px; padding: 30px; margin-bottom: 20px;">
         <h1 style="color: #2563eb; margin-top: 0;">You've been added! 👥</h1>
         <p style="font-size: 16px; margin-bottom: 20px;">
-            <strong>{{ .ownerName }}</strong> has added you to the availability group <strong>{{ .groupName }}</strong>.
+            <strong>{{ .Tx.Data.ownerName }}</strong> has added you to the availability group <strong>{{ .Tx.Data.groupName }}</strong>.
         </p>
         <p style="font-size: 16px; margin-bottom: 25px;">
             You can now view and share availability with other members of this group.
         </p>
         <div style="text-align: center;">
-            <a href="{{ .groupUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">View Group</a>
+            <a href="{{ .Tx.Data.groupUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">View Group</a>
         </div>
     </div>
     <div style="color: #6b7280; font-size: 14px; text-align: center; margin-top: 30px;">
@@ -175,17 +185,19 @@ You need to create 9 email templates in Listmonk. Below are the details for each
 </html>
 ```
 
-### Template 5: Someone Responded (Groups - ID: 13)
+### Template 5: Someone Responded (Groups)
+
+**Environment Variable**: `LISTMONK_SOMEONE_RESPONDED_GROUP_TEMPLATE_ID` (default: 13)
 
 **Purpose**: Sent to group owner when someone responds to an availability group
 
 **Template Variables**:
-- `{{ .ownerName }}` - First name of the group owner
-- `{{ .groupName }}` - Name of the availability group
-- `{{ .respondentName }}` - Name of the person who responded
-- `{{ .groupUrl }}` - URL to view the group
+- `{{ .Tx.Data.ownerName }}` - First name of the group owner
+- `{{ .Tx.Data.groupName }}` - Name of the availability group
+- `{{ .Tx.Data.respondentName }}` - Name of the person who responded
+- `{{ .Tx.Data.groupUrl }}` - URL to view the group
 
-**Subject Line**: `{{ .respondentName }} responded to {{ .groupName }}`
+**Subject Line**: `{{ .Tx.Data.respondentName }} responded to {{ .Tx.Data.groupName }}`
 
 **HTML Body**:
 ```html
@@ -200,13 +212,13 @@ You need to create 9 email templates in Listmonk. Below are the details for each
     <div style="background-color: #f8f9fa; border-radius: 10px; padding: 30px; margin-bottom: 20px;">
         <h1 style="color: #2563eb; margin-top: 0;">New availability shared! 📋</h1>
         <p style="font-size: 16px; margin-bottom: 20px;">
-            Hi {{ .ownerName }},
+            Hi {{ .Tx.Data.ownerName }},
         </p>
         <p style="font-size: 16px; margin-bottom: 20px;">
-            <strong>{{ .respondentName }}</strong> has shared their availability in the group <strong>{{ .groupName }}</strong>.
+            <strong>{{ .Tx.Data.respondentName }}</strong> has shared their availability in the group <strong>{{ .Tx.Data.groupName }}</strong>.
         </p>
         <div style="text-align: center; margin-top: 25px;">
-            <a href="{{ .groupUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">View Availability</a>
+            <a href="{{ .Tx.Data.groupUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">View Availability</a>
         </div>
     </div>
     <div style="color: #6b7280; font-size: 14px; text-align: center; margin-top: 30px;">
@@ -216,17 +228,19 @@ You need to create 9 email templates in Listmonk. Below are the details for each
 </html>
 ```
 
-### Template 6: X Responses Received (ID: 14)
+### Template 6: X Responses Received
+
+**Environment Variable**: `LISTMONK_X_RESPONSES_TEMPLATE_ID` (default: 14)
 
 **Purpose**: Sent to event owner when a threshold number of responses is reached
 
 **Template Variables**:
-- `{{ .ownerName }}` - First name of the event owner
-- `{{ .eventName }}` - Name of the event
-- `{{ .numResponses }}` - Number of responses received
-- `{{ .eventUrl }}` - URL to view the event
+- `{{ .Tx.Data.ownerName }}` - First name of the event owner
+- `{{ .Tx.Data.eventName }}` - Name of the event
+- `{{ .Tx.Data.numResponses }}` - Number of responses received
+- `{{ .Tx.Data.eventUrl }}` - URL to view the event
 
-**Subject Line**: `{{ .numResponses }} people have responded to {{ .eventName }}!`
+**Subject Line**: `{{ .Tx.Data.numResponses }} people have responded to {{ .Tx.Data.eventName }}!`
 
 **HTML Body**:
 ```html
@@ -241,16 +255,16 @@ You need to create 9 email templates in Listmonk. Below are the details for each
     <div style="background-color: #f8f9fa; border-radius: 10px; padding: 30px; margin-bottom: 20px;">
         <h1 style="color: #2563eb; margin-top: 0;">Milestone reached! 🎯</h1>
         <p style="font-size: 16px; margin-bottom: 20px;">
-            Hi {{ .ownerName }},
+            Hi {{ .Tx.Data.ownerName }},
         </p>
         <p style="font-size: 16px; margin-bottom: 20px;">
-            Great news! You've received <strong>{{ .numResponses }} responses</strong> to your event <strong>{{ .eventName }}</strong>.
+            Great news! You've received <strong>{{ .Tx.Data.numResponses }} responses</strong> to your event <strong>{{ .Tx.Data.eventName }}</strong>.
         </p>
         <p style="font-size: 16px; margin-bottom: 25px;">
             Check out the responses to find the best time for your event.
         </p>
         <div style="text-align: center;">
-            <a href="{{ .eventUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">View Responses</a>
+            <a href="{{ .Tx.Data.eventUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">View Responses</a>
         </div>
     </div>
     <div style="color: #6b7280; font-size: 14px; text-align: center; margin-top: 30px;">
@@ -267,12 +281,12 @@ You need to create 9 email templates in Listmonk. Below are the details for each
 **Purpose**: Sent immediately when someone is added to the reminder list
 
 **Template Variables**:
-- `{{ .ownerName }}` - First name of the event owner
-- `{{ .eventName }}` - Name of the event
-- `{{ .eventUrl }}` - URL to respond to the event
-- `{{ .finishedUrl }}` - URL to mark as responded
+- `{{ .Tx.Data.ownerName }}` - First name of the event owner
+- `{{ .Tx.Data.eventName }}` - Name of the event
+- `{{ .Tx.Data.eventUrl }}` - URL to respond to the event
+- `{{ .Tx.Data.finishedUrl }}` - URL to mark as responded
 
-**Subject Line**: `{{ .ownerName }} wants to know when you're free for {{ .eventName }}`
+**Subject Line**: `{{ .Tx.Data.ownerName }} wants to know when you're free for {{ .Tx.Data.eventName }}`
 
 **HTML Body**:
 ```html
@@ -290,17 +304,17 @@ You need to create 9 email templates in Listmonk. Below are the details for each
             Hi there! 👋
         </p>
         <p style="font-size: 16px; margin-bottom: 20px;">
-            <strong>{{ .ownerName }}</strong> is trying to schedule <strong>{{ .eventName }}</strong> and would like to know when you're available.
+            <strong>{{ .Tx.Data.ownerName }}</strong> is trying to schedule <strong>{{ .Tx.Data.eventName }}</strong> and would like to know when you're available.
         </p>
         <p style="font-size: 16px; margin-bottom: 25px;">
             Please take a moment to share your availability - it only takes a minute!
         </p>
         <div style="text-align: center; margin-bottom: 20px;">
-            <a href="{{ .eventUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">Share Your Availability</a>
+            <a href="{{ .Tx.Data.eventUrl }}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">Share Your Availability</a>
         </div>
         <div style="background-color: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin-top: 20px;">
             <p style="font-size: 14px; color: #6b7280; margin: 0;">
-                Already responded? <a href="{{ .finishedUrl }}" style="color: #2563eb; text-decoration: none;">Let us know</a> to stop receiving reminders.
+                Already responded? <a href="{{ .Tx.Data.finishedUrl }}" style="color: #2563eb; text-decoration: none;">Let us know</a> to stop receiving reminders.
             </p>
         </div>
     </div>
@@ -319,7 +333,7 @@ You need to create 9 email templates in Listmonk. Below are the details for each
 
 **Template Variables**: Same as Initial Reminder
 
-**Subject Line**: `Reminder: {{ .ownerName }} needs your availability for {{ .eventName }}`
+**Subject Line**: `Reminder: {{ .Tx.Data.ownerName }} needs your availability for {{ .Tx.Data.eventName }}`
 
 **HTML Body**:
 ```html
@@ -334,17 +348,17 @@ You need to create 9 email templates in Listmonk. Below are the details for each
     <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 30px; margin-bottom: 20px; border-radius: 6px;">
         <h1 style="color: #92400e; margin-top: 0;">Friendly reminder! ⏰</h1>
         <p style="font-size: 16px; margin-bottom: 20px; color: #78350f;">
-            Just a quick reminder that <strong>{{ .ownerName }}</strong> is still waiting for your availability for <strong>{{ .eventName }}</strong>.
+            Just a quick reminder that <strong>{{ .Tx.Data.ownerName }}</strong> is still waiting for your availability for <strong>{{ .Tx.Data.eventName }}</strong>.
         </p>
         <p style="font-size: 16px; margin-bottom: 25px; color: #78350f;">
             It only takes a minute to respond!
         </p>
         <div style="text-align: center; margin-bottom: 20px;">
-            <a href="{{ .eventUrl }}" style="display: inline-block; background-color: #f59e0b; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">Share Your Availability</a>
+            <a href="{{ .Tx.Data.eventUrl }}" style="display: inline-block; background-color: #f59e0b; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">Share Your Availability</a>
         </div>
         <div style="background-color: #fff; border: 1px solid #fbbf24; border-radius: 6px; padding: 15px; margin-top: 20px;">
             <p style="font-size: 14px; color: #92400e; margin: 0;">
-                Already responded? <a href="{{ .finishedUrl }}" style="color: #d97706; text-decoration: none;">Let us know</a> to stop receiving reminders.
+                Already responded? <a href="{{ .Tx.Data.finishedUrl }}" style="color: #d97706; text-decoration: none;">Let us know</a> to stop receiving reminders.
             </p>
         </div>
     </div>
@@ -363,7 +377,7 @@ You need to create 9 email templates in Listmonk. Below are the details for each
 
 **Template Variables**: Same as Initial Reminder
 
-**Subject Line**: `Last reminder: Please share your availability for {{ .eventName }}`
+**Subject Line**: `Last reminder: Please share your availability for {{ .Tx.Data.eventName }}`
 
 **HTML Body**:
 ```html
@@ -378,20 +392,20 @@ You need to create 9 email templates in Listmonk. Below are the details for each
     <div style="background-color: #fee2e2; border-left: 4px solid #ef4444; padding: 30px; margin-bottom: 20px; border-radius: 6px;">
         <h1 style="color: #991b1b; margin-top: 0;">Final reminder! ⚠️</h1>
         <p style="font-size: 16px; margin-bottom: 20px; color: #7f1d1d;">
-            This is the last reminder from <strong>{{ .ownerName }}</strong> about <strong>{{ .eventName }}</strong>.
+            This is the last reminder from <strong>{{ .Tx.Data.ownerName }}</strong> about <strong>{{ .Tx.Data.eventName }}</strong>.
         </p>
         <p style="font-size: 16px; margin-bottom: 20px; color: #7f1d1d;">
-            Your input is important! Please take a moment to share your availability so {{ .ownerName }} can find a time that works for everyone.
+            Your input is important! Please take a moment to share your availability so {{ .Tx.Data.ownerName }} can find a time that works for everyone.
         </p>
         <p style="font-size: 14px; margin-bottom: 25px; color: #991b1b; font-style: italic;">
             This is the final reminder you'll receive.
         </p>
         <div style="text-align: center; margin-bottom: 20px;">
-            <a href="{{ .eventUrl }}" style="display: inline-block; background-color: #ef4444; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">Share Your Availability Now</a>
+            <a href="{{ .Tx.Data.eventUrl }}" style="display: inline-block; background-color: #ef4444; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">Share Your Availability Now</a>
         </div>
         <div style="background-color: #fff; border: 1px solid #fca5a5; border-radius: 6px; padding: 15px; margin-top: 20px;">
             <p style="font-size: 14px; color: #991b1b; margin: 0;">
-                Already responded? <a href="{{ .finishedUrl }}" style="color: #dc2626; text-decoration: none;">Let us know</a> to confirm.
+                Already responded? <a href="{{ .Tx.Data.finishedUrl }}" style="color: #dc2626; text-decoration: none;">Let us know</a> to confirm.
             </p>
         </div>
     </div>
@@ -427,25 +441,23 @@ For each template above:
 After creating all templates, update your `.env` file with the template IDs:
 
 ```bash
-# Fixed template IDs (must match the code expectations)
-# Create these templates with these exact IDs or update the code
-# Template 8: Everyone Responded Notification
-# Template 9: Availability Group Invite
-# Template 10: Someone Responded (Events)
-# Template 11: Added as Attendee
-# Template 13: Someone Responded (Groups)
-# Template 14: X Responses Received
+# All template IDs are now configurable for better self-hosted flexibility
 
-# Reminder email template IDs (configurable)
+# Transactional Email Templates
+LISTMONK_EVERYONE_RESPONDED_TEMPLATE_ID=8
+LISTMONK_AVAILABILITY_GROUP_INVITE_TEMPLATE_ID=9
+LISTMONK_SOMEONE_RESPONDED_EVENT_TEMPLATE_ID=10
+LISTMONK_ADDED_ATTENDEE_TEMPLATE_ID=11
+LISTMONK_SOMEONE_RESPONDED_GROUP_TEMPLATE_ID=13
+LISTMONK_X_RESPONSES_TEMPLATE_ID=14
+
+# Reminder Email Templates
 LISTMONK_INITIAL_EMAIL_REMINDER_ID=1
 LISTMONK_SECOND_EMAIL_REMINDER_ID=2
 LISTMONK_FINAL_EMAIL_REMINDER_ID=3
 ```
 
-**Note**: The fixed template IDs (8, 9, 10, 11, 13, 14) are hardcoded in the application. You have two options:
-
-1. **Create templates with these exact IDs** by creating and deleting templates until you get the right IDs
-2. **Update the code** to use configurable template IDs (recommended for self-hosted deployments)
+**Note**: You can use any template IDs you want! The application will use your configured values, falling back to the defaults shown above only if the environment variable is not set.
 
 ### Step 4: Configure SMTP
 
@@ -508,25 +520,28 @@ Test each template by sending a test email:
 - Test on multiple email clients (Gmail, Outlook, etc.)
 - Keep mobile users in mind - the templates use responsive design principles
 
-## Advanced: Making Template IDs Configurable
+## Implementation Details
 
-For better self-hosted flexibility, you may want to make all template IDs configurable via environment variables. This requires modifying the Go code in `server/routes/events.go` to read template IDs from environment variables instead of using hardcoded values.
+### Scheduler
 
-Example changes needed:
-```go
-// Instead of:
-someoneRespondedEmailId := 10
+Timeful uses the `robfig/cron` library (a vetted, production-ready scheduler) to check for pending reminder emails every minute. This is more reliable than custom polling logic and provides standard cron syntax for scheduling.
 
-// Use:
-someoneRespondedEmailId, _ := strconv.Atoi(os.Getenv("LISTMONK_SOMEONE_RESPONDED_EMAIL_ID"))
-```
+### External Subscriber Mode
 
-This would require adding these to `.env`:
-```bash
-LISTMONK_EVERYONE_RESPONDED_EMAIL_ID=8
-LISTMONK_GROUP_INVITE_EMAIL_ID=9
-LISTMONK_SOMEONE_RESPONDED_EVENT_EMAIL_ID=10
-LISTMONK_ADDED_ATTENDEE_EMAIL_ID=11
-LISTMONK_SOMEONE_RESPONDED_GROUP_EMAIL_ID=13
-LISTMONK_X_RESPONSES_EMAIL_ID=14
-```
+All emails are sent using Listmonk's "external" subscriber mode, which means:
+- Email addresses don't need to be pre-registered as subscribers
+- Emails can be sent to any address on-demand
+- Subscribers are only added to marketing lists if explicitly requested
+- This simplifies setup and makes testing easier
+
+To use external mode syntax in your templates:
+- Access data with `{{ .Tx.Data.variableName }}` instead of `{{ .variableName }}`
+- Example: `{{ .Tx.Data.ownerName }}` for the owner's name
+
+### Configurable Template IDs
+
+All template IDs are configurable via environment variables for maximum flexibility:
+- No hardcoded IDs in the application code
+- Easy to customize for different deployments
+- Fallback to sensible defaults if not configured
+- See `.env.example` for all available template ID variables

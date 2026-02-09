@@ -250,7 +250,7 @@ func createEvent(c *gin.Context) {
 			}
 
 			// Add attendees to attendees array and send invite emails
-			availabilityGroupInviteEmailId := 9
+			availabilityGroupInviteEmailId := listmonk.GetTemplateID(listmonk.EnvAvailabilityGroupInviteTemplateID, 9)
 			for _, email := range payload.Attendees {
 				listmonk.SendEmailAddSubscriberIfNotExist(email, availabilityGroupInviteEmailId, bson.M{
 					"ownerName": ownerName,
@@ -449,7 +449,7 @@ func editEvent(c *gin.Context) {
 
 		for _, addedEmail := range added {
 			// Send invite email
-			availabilityGroupInviteEmailId := 9
+			availabilityGroupInviteEmailId := listmonk.GetTemplateID(listmonk.EnvAvailabilityGroupInviteTemplateID, 9)
 			listmonk.SendEmailAddSubscriberIfNotExist(addedEmail.Value, availabilityGroupInviteEmailId, bson.M{
 				"ownerName": ownerName,
 				"groupName": event.Name,
@@ -465,7 +465,7 @@ func editEvent(c *gin.Context) {
 		// Send group update emails
 		if len(added) > 0 {
 			emails := utils.Map(added, func(a utils.ElementWithIndex[string]) string { return a.Value })
-			addedAttendeeEmailId := 11
+			addedAttendeeEmailId := listmonk.GetTemplateID(listmonk.EnvAddedAttendeeTemplateID, 11)
 
 			for _, keptEmail := range kept {
 				listmonk.SendEmailAddSubscriberIfNotExist(keptEmail.Value, addedAttendeeEmailId, bson.M{
@@ -845,7 +845,7 @@ func updateEventResponse(c *gin.Context) {
 			}
 
 			if event.Type == models.GROUP {
-				someoneRespondedEmailId := 13
+				someoneRespondedEmailId := listmonk.GetTemplateID(listmonk.EnvSomeoneRespondedGroupTemplateID, 13)
 				listmonk.SendEmail(creator.Email, someoneRespondedEmailId, bson.M{
 					"groupName":      event.Name,
 					"ownerName":      creator.FirstName,
@@ -853,7 +853,7 @@ func updateEventResponse(c *gin.Context) {
 					"groupUrl":       fmt.Sprintf("%s/g/%s", utils.GetBaseUrl(), event.GetId()),
 				})
 			} else {
-				someoneRespondedEmailId := 10
+				someoneRespondedEmailId := listmonk.GetTemplateID(listmonk.EnvSomeoneRespondedEventTemplateID, 10)
 				listmonk.SendEmail(creator.Email, someoneRespondedEmailId, bson.M{
 					"eventName":      event.Name,
 					"ownerName":      creator.FirstName,
@@ -884,7 +884,7 @@ func updateEventResponse(c *gin.Context) {
 				return
 			}
 
-			sendEmailAfterXResponsesEmailId := 14
+			sendEmailAfterXResponsesEmailId := listmonk.GetTemplateID(listmonk.EnvXResponsesTemplateID, 14)
 			listmonk.SendEmail(creator.Email, sendEmailAfterXResponsesEmailId, bson.M{
 				"eventName":    event.Name,
 				"ownerName":    creator.FirstName,
@@ -1112,7 +1112,7 @@ func userResponded(c *gin.Context) {
 		eventUrl := fmt.Sprintf("%s/e/%s", baseUrl, eventId)
 
 		// Send email
-		everyoneRespondedEmailTemplateId := 8
+		everyoneRespondedEmailTemplateId := listmonk.GetTemplateID(listmonk.EnvEveryoneRespondedTemplateID, 8)
 		listmonk.SendEmail(owner.Email, everyoneRespondedEmailTemplateId, bson.M{
 			"eventName": event.Name,
 			"eventUrl":  eventUrl,

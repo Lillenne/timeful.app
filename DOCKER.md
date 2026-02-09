@@ -428,20 +428,22 @@ docker compose restart backend listmonk
 
 ### Reminder Email Scheduling
 
-Timeful uses Listmonk's built-in scheduler for sending reminder emails instead of Google Cloud Tasks. This means:
+Timeful uses a production-ready scheduler (`robfig/cron`) for sending reminder emails instead of Google Cloud Tasks. This means:
 
-- **No external dependencies**: All email scheduling is handled internally
+- **No external dependencies**: All email scheduling is handled internally using a vetted cron library
 - **Self-hosted friendly**: No need for Google Cloud account or service account keys
+- **Reliable scheduling**: Uses `robfig/cron` (the most popular Go scheduling library) with standard cron syntax
 - **Automatic scheduling**: Reminder emails are sent immediately, after 24 hours, and after 72 hours
 - **Graceful cancellation**: Reminders are automatically cancelled when users respond
 
-The backend service includes a background scheduler that:
-- Checks for pending reminder emails every minute
-- Sends emails at their scheduled time using Listmonk's transactional API
+The backend service includes a cron-based scheduler that:
+- Runs on standard cron schedule: `* * * * *` (every minute)
+- Checks for pending reminder emails in MongoDB
+- Sends emails at their scheduled time using Listmonk's external subscriber mode
 - Marks emails as sent to prevent duplicates
 - Handles user responses by cancelling remaining reminders
 
-**Note**: If you were previously using Google Cloud Tasks (via `SERVICE_ACCOUNT_KEY_PATH`), you can remove that configuration. The application will fall back to the Listmonk scheduler automatically. Both systems can run simultaneously for backwards compatibility during migration.
+**Note**: If you were previously using Google Cloud Tasks (via `SERVICE_ACCOUNT_KEY_PATH`), you can remove that configuration. The application will fall back to the cron scheduler automatically. Both systems can run simultaneously for backwards compatibility during migration.
 
 ### Managing Listmonk
 

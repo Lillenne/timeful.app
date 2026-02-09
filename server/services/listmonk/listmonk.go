@@ -10,11 +10,39 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"schej.it/server/logger"
+)
+
+// GetTemplateID retrieves a template ID from environment variables with error handling
+func GetTemplateID(envVar string, defaultValue int) int {
+	if value := os.Getenv(envVar); value != "" {
+		if id, err := strconv.Atoi(value); err == nil {
+			return id
+		}
+		logger.StdErr.Printf("Warning: Invalid %s value '%s', using default %d\n", envVar, value, defaultValue)
+	}
+	if defaultValue == 0 {
+		logger.StdErr.Printf("Warning: %s not set and no default provided\n", envVar)
+	}
+	return defaultValue
+}
+
+// Template ID environment variable names
+const (
+	EnvEveryoneRespondedTemplateID        = "LISTMONK_EVERYONE_RESPONDED_TEMPLATE_ID"
+	EnvAvailabilityGroupInviteTemplateID  = "LISTMONK_AVAILABILITY_GROUP_INVITE_TEMPLATE_ID"
+	EnvSomeoneRespondedEventTemplateID    = "LISTMONK_SOMEONE_RESPONDED_EVENT_TEMPLATE_ID"
+	EnvAddedAttendeeTemplateID            = "LISTMONK_ADDED_ATTENDEE_TEMPLATE_ID"
+	EnvSomeoneRespondedGroupTemplateID    = "LISTMONK_SOMEONE_RESPONDED_GROUP_TEMPLATE_ID"
+	EnvXResponsesTemplateID               = "LISTMONK_X_RESPONSES_TEMPLATE_ID"
+	EnvInitialEmailReminderID             = "LISTMONK_INITIAL_EMAIL_REMINDER_ID"
+	EnvSecondEmailReminderID              = "LISTMONK_SECOND_EMAIL_REMINDER_ID"
+	EnvFinalEmailReminderID               = "LISTMONK_FINAL_EMAIL_REMINDER_ID"
 )
 
 // Adds the given user to the Listmonk contact list
@@ -125,12 +153,14 @@ func SendEmail(email string, templateId int, data bson.M) {
 	listmonkUsername := os.Getenv("LISTMONK_USERNAME")
 	listmonkPassword := os.Getenv("LISTMONK_PASSWORD")
 
-	// Construct body
+	// Construct body using external mode to send to arbitrary email addresses
+	// This doesn't require the email to be a subscriber in Listmonk
 	body, err := json.Marshal(bson.M{
-		"subscriber_email": email,
-		"template_id":      templateId,
-		"data":             data,
-		"content_type":     "html",
+		"subscriber_mode":   "external",
+		"subscriber_emails": []string{email},
+		"template_id":       templateId,
+		"data":              data,
+		"content_type":      "html",
 	})
 	if err != nil {
 		logger.StdErr.Println(err)
@@ -146,20 +176,27 @@ func SendEmail(email string, templateId int, data bson.M) {
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		logger.StdErr.Println(err)
+		return
 	}
 	defer response.Body.Close()
 }
 
-// Send a transactional email using the specified template and data. Adds subscriber if they don't exist
+// SendEmailAddSubscriberIfNotExist sends a transactional email using external mode
+// Optionally adds the user as a subscriber for marketing emails if requested
+// Uses external mode - does not require subscribers to exist in Listmonk for transactional emails
 func SendEmailAddSubscriberIfNotExist(email string, templateId int, data bson.M, sendMarketingEmails bool) {
 	if os.Getenv("LISTMONK_ENABLED") == "false" {
 		return
 	}
 
-	if exists, _ := DoesUserExist(email); !exists {
-		AddUserToListmonk(email, "", "", "", nil, sendMarketingEmails)
+	// Optionally add to marketing list if requested
+	if sendMarketingEmails {
+		if exists, _ := DoesUserExist(email); !exists {
+			AddUserToListmonk(email, "", "", "", nil, true)
+		}
 	}
 
+	// Send transactional email using external mode
 	SendEmail(email, templateId, data)
 }
 
@@ -222,27 +259,39 @@ func ScheduleReminderEmails(email string, ownerName string, eventName string, ev
 	return reminders
 }
 
-// StartReminderEmailScheduler starts a background worker that checks for and sends scheduled reminder emails
-func StartReminderEmailScheduler(ctx context.Context, eventsCollection *mongo.Collection) {
+// StartReminderEmailScheduler starts a background worker using a cron scheduler
+// to check for and send scheduled reminder emails every minute
+func StartReminderEmailScheduler(ctx context.Context, eventsCollection *mongo.Collection) *cron.Cron {
 	if os.Getenv("LISTMONK_ENABLED") == "false" {
 		logger.StdOut.Println("Listmonk disabled, reminder email scheduler not started")
-		return
+		return nil
 	}
 
-	logger.StdOut.Println("Starting reminder email scheduler...")
+	logger.StdOut.Println("Starting reminder email scheduler using robfig/cron...")
 
-	ticker := time.NewTicker(1 * time.Minute) // Check every minute
-	defer ticker.Stop()
+	// Create a new cron scheduler
+	c := cron.New()
 
-	for {
-		select {
-		case <-ctx.Done():
-			logger.StdOut.Println("Reminder email scheduler stopped")
-			return
-		case <-ticker.C:
-			sendScheduledReminders(eventsCollection)
-		}
+	// Schedule the job to run every minute
+	_, err := c.AddFunc("* * * * *", func() {
+		sendScheduledReminders(eventsCollection)
+	})
+	if err != nil {
+		logger.StdErr.Printf("Error scheduling reminder email job: %v\n", err)
+		return nil
 	}
+
+	// Start the scheduler
+	c.Start()
+
+	// Stop the scheduler when context is cancelled
+	go func() {
+		<-ctx.Done()
+		logger.StdOut.Println("Reminder email scheduler stopped")
+		c.Stop()
+	}()
+
+	return c
 }
 
 // sendScheduledReminders checks for and sends any due reminder emails

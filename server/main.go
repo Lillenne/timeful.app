@@ -123,10 +123,10 @@ func main() {
 	closeTasks := gcloud.InitTasks()
 	defer closeTasks()
 
-	// Start reminder email scheduler for Listmonk
+	// Start reminder email scheduler for Listmonk using robfig/cron
 	ctx, cancelScheduler := context.WithCancel(context.Background())
 	defer cancelScheduler()
-	go listmonk.StartReminderEmailScheduler(ctx, db.GetEventsCollection())
+	listmonk.StartReminderEmailScheduler(ctx, db.GetEventsCollection())
 
 	// Session
 	store := cookie.NewStore([]byte("secret"))
