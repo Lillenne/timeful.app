@@ -59,6 +59,12 @@ type CreateEventRequest struct {
 
 	// Only for availability groups
 	Attendees []string `json:"attendees"`
+
+	// Recurring event fields
+	IsRecurring           *bool   `json:"isRecurring"`
+	RecurrenceInterval    *int    `json:"recurrenceInterval"`
+	RecurrenceUnit        *string `json:"recurrenceUnit"`
+	RecurrenceAdvanceDays *int    `json:"recurrenceAdvanceDays"`
 }
 
 // EditEventRequest represents the request body for editing an event
@@ -91,6 +97,9 @@ type EditEventRequest struct {
 
 	// Only for availability groups
 	Attendees []string `json:"attendees"`
+
+	// Recurring event fields
+	RecurrenceEnabled *bool `json:"recurrenceEnabled"`
 }
 
 func InitEvents(router *gin.RouterGroup) {
@@ -142,6 +151,28 @@ func createEvent(c *gin.Context) {
 	// If user logged in, set owner id to their user id, otherwise set owner id to nil
 	userIdInterface := session.Get("userId")
 	userId, signedIn := userIdInterface.(string)
+
+	// Validate recurring events require authentication
+	if payload.IsRecurring != nil && *payload.IsRecurring {
+		if !signedIn {
+			c.JSON(http.StatusUnauthorized, responses.Error{Error: "Recurring events require authentication"})
+			return
+		}
+		// Validate recurring event parameters
+		if payload.RecurrenceInterval == nil || *payload.RecurrenceInterval <= 0 {
+			c.JSON(http.StatusBadRequest, responses.Error{Error: "Recurrence interval must be greater than 0"})
+			return
+		}
+		if payload.RecurrenceUnit == nil || (*payload.RecurrenceUnit != "days" && *payload.RecurrenceUnit != "weeks" && *payload.RecurrenceUnit != "months") {
+			c.JSON(http.StatusBadRequest, responses.Error{Error: "Recurrence unit must be 'days', 'weeks', or 'months'"})
+			return
+		}
+		if payload.RecurrenceAdvanceDays == nil || *payload.RecurrenceAdvanceDays < 0 {
+			c.JSON(http.StatusBadRequest, responses.Error{Error: "Recurrence advance days must be greater than or equal to 0"})
+			return
+		}
+	}
+
 	var user *models.User
 	var ownerId primitive.ObjectID
 	if signedIn {
@@ -177,6 +208,38 @@ func createEvent(c *gin.Context) {
 		Type:                     payload.Type,
 		SignUpResponses:          make(map[string]*models.SignUpResponse),
 		NumResponses:             &numResponses,
+		IsRecurring:              payload.IsRecurring,
+		RecurrenceInterval:       payload.RecurrenceInterval,
+		RecurrenceUnit:           payload.RecurrenceUnit,
+		RecurrenceAdvanceDays:    payload.RecurrenceAdvanceDays,
+		RecurrenceEnabled:        payload.IsRecurring, // Initially enabled if recurring is set
+	}
+
+	// Calculate next occurrence date for recurring events
+	if payload.IsRecurring != nil && *payload.IsRecurring && len(payload.Dates) > 0 {
+		// Find the latest date in the event
+		latestDate := payload.Dates[0].Time()
+		for _, date := range payload.Dates {
+			if date.Time().After(latestDate) {
+				latestDate = date.Time()
+			}
+		}
+
+		// Calculate when the next event should be created (event date - advance days)
+		var nextEventDate time.Time
+		switch *payload.RecurrenceUnit {
+		case "days":
+			nextEventDate = latestDate.AddDate(0, 0, *payload.RecurrenceInterval)
+		case "weeks":
+			nextEventDate = latestDate.AddDate(0, 0, *payload.RecurrenceInterval*7)
+		case "months":
+			nextEventDate = latestDate.AddDate(0, *payload.RecurrenceInterval, 0)
+		}
+
+		// Subtract advance days to get when to create the event
+		createDate := nextEventDate.AddDate(0, 0, -*payload.RecurrenceAdvanceDays)
+		nextOccurrenceDateTime := primitive.NewDateTimeFromTime(createDate)
+		event.NextOccurrenceDate = &nextOccurrenceDateTime
 	}
 
 	// Generate short id
@@ -348,6 +411,11 @@ func editEvent(c *gin.Context) {
 	event.SendEmailAfterXResponses = payload.SendEmailAfterXResponses
 	event.CollectEmails = payload.CollectEmails
 	event.Type = payload.Type
+
+	// Update RecurrenceEnabled if provided
+	if payload.RecurrenceEnabled != nil {
+		event.RecurrenceEnabled = payload.RecurrenceEnabled
+	}
 
 	// Update remindees
 	if event.Type == models.DOW || event.Type == models.SPECIFIC_DATES {
