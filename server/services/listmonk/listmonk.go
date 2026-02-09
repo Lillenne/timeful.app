@@ -292,6 +292,14 @@ func ScheduleReminderEmails(email string, ownerName string, eventName string, ev
 
 	logger.StdOut.Printf("Scheduled 3 reminders for %s (immediate, 24h, and 72h)\n", email)
 	logger.StdOut.Printf("First reminder scheduled at: %v (now-1s for immediate pickup)\n", now.Add(-1*time.Second))
+	
+	// Log the reminder details for debugging
+	for i, reminder := range reminders {
+		if r, ok := reminder.(bson.M); ok {
+			logger.StdOut.Printf("  Reminder %d: templateId=%v, scheduledAt=%v, sent=%v\n", 
+				i+1, r["templateId"], r["scheduledAt"], r["sent"])
+		}
+	}
 
 	return reminders
 }
@@ -343,6 +351,20 @@ func sendScheduledReminders(eventsCollection *mongo.Collection, usersCollection 
 
 	logger.StdOut.Printf("Checking for scheduled reminders at %v\n", time.Now())
 	logger.StdOut.Printf("Query filter: looking for reminders with scheduledAt <= %v\n", time.Now())
+	
+	// Debug: Check how many events have remindees at all
+	debugFilter := bson.M{"remindees": bson.M{"$exists": true, "$ne": nil}}
+	debugCount, debugErr := eventsCollection.CountDocuments(ctx, debugFilter)
+	if debugErr == nil {
+		logger.StdOut.Printf("DEBUG: Total events with remindees field: %d\n", debugCount)
+	}
+	
+	// Debug: Check remindees with reminders array
+	debugFilter2 := bson.M{"remindees.reminders": bson.M{"$exists": true}}
+	debugCount2, debugErr2 := eventsCollection.CountDocuments(ctx, debugFilter2)
+	if debugErr2 == nil {
+		logger.StdOut.Printf("DEBUG: Events with remindees.reminders array: %d\n", debugCount2)
+	}
 
 	// Find all events with remindees that have unsent scheduled reminders
 	// Query looks for reminders where sent is false or doesn't exist (for backwards compatibility)
@@ -382,6 +404,8 @@ func sendScheduledReminders(eventsCollection *mongo.Collection, usersCollection 
 		eventId := event["_id"].(primitive.ObjectID).Hex()
 		eventName := event["name"].(string)
 		
+		logger.StdOut.Printf("DEBUG: Found event %s (%s) with remindees\n", eventId, eventName)
+		
 		// Get owner name by fetching from database
 		ownerName := "Somebody"
 		if ownerId, ok := event["ownerId"].(primitive.ObjectID); ok && !ownerId.IsZero() {
@@ -398,8 +422,11 @@ func sendScheduledReminders(eventsCollection *mongo.Collection, usersCollection 
 
 		remindees, ok := event["remindees"].(primitive.A)
 		if !ok {
+			logger.StdOut.Printf("DEBUG: Event %s remindees is not a proper array\n", eventId)
 			continue
 		}
+		
+		logger.StdOut.Printf("DEBUG: Event %s has %d remindee(s)\n", eventId, len(remindees))
 
 		// Construct URLs (using a helper function from utils)
 		baseUrl := os.Getenv("BASE_URL")
@@ -426,8 +453,11 @@ func sendScheduledReminders(eventsCollection *mongo.Collection, usersCollection 
 
 			reminders, ok := remindee["reminders"].(primitive.A)
 			if !ok {
+				logger.StdOut.Printf("DEBUG: Remindee %s has no reminders array\n", email)
 				continue
 			}
+			
+			logger.StdOut.Printf("DEBUG: Remindee %s has %d reminder(s)\n", email, len(reminders))
 
 			finishedUrl := fmt.Sprintf("%s/e/%s/responded?email=%s", baseUrl, eventId, email)
 
@@ -435,8 +465,13 @@ func sendScheduledReminders(eventsCollection *mongo.Collection, usersCollection 
 			for j, reminderInterface := range reminders {
 				reminder, ok := reminderInterface.(bson.M)
 				if !ok {
+					logger.StdOut.Printf("DEBUG: Reminder %d for %s is not a bson.M\n", j+1, email)
 					continue
 				}
+				
+				// Log the reminder details
+				logger.StdOut.Printf("DEBUG: Reminder %d for %s: templateId=%v, scheduledAt=%v, sent=%v\n",
+					j+1, email, reminder["templateId"], reminder["scheduledAt"], reminder["sent"])
 
 				// Check if reminder has been sent
 				// Handle both bool and *bool types for backwards compatibility
