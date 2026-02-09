@@ -81,14 +81,39 @@
         </div>
 
         <div class="tw-mb-12 tw-space-y-2">
+          <div
+            v-if="authUser"
+            class="tw-flex tw-flex-col tw-gap-2 sm:tw-flex-row sm:tw-justify-center"
+          >
+            <v-btn
+              class="tw-rounded-lg tw-bg-green tw-px-10 tw-text-base sm:tw-px-10 lg:tw-px-12"
+              dark
+              @click="openCreateEvent"
+              large
+              :x-large="$vuetify.breakpoint.mdAndUp"
+            >
+              + Create New
+            </v-btn>
+            <v-btn
+              class="tw-rounded-lg tw-bg-white tw-px-10 tw-text-base tw-text-green sm:tw-px-10 lg:tw-px-12"
+              outlined
+              color="green"
+              @click="openDashboard"
+              large
+              :x-large="$vuetify.breakpoint.mdAndUp"
+            >
+              Open dashboard
+            </v-btn>
+          </div>
           <v-btn
+            v-else
             class="tw-block tw-self-center tw-rounded-lg tw-bg-green tw-px-10 tw-text-base sm:tw-px-10 lg:tw-px-12"
             dark
-            @click="authUser ? openDashboard() : (newDialog = true)"
+            @click="newDialog = true"
             large
             :x-large="$vuetify.breakpoint.mdAndUp"
           >
-            {{ authUser ? "Open dashboard" : "Create event" }}
+            Create event
           </v-btn>
           <div
             v-if="!authUser"
@@ -186,7 +211,15 @@
           src="https://www.youtube.com/embed/vFkBC8BrkOk?si=pF64JAIyDhom_1do"
           title="Timeful demo"
           frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allow="
+            accelerometer;
+            autoplay;
+            clipboard-write;
+            encrypted-media;
+            gyroscope;
+            picture-in-picture;
+            web-share;
+          "
           referrerpolicy="strict-origin-when-cross-origin"
           allowfullscreen
         ></iframe>
@@ -308,7 +341,7 @@ import HowItWorksDialog from "@/components/HowItWorksDialog.vue"
 import { vueVimeoPlayer } from "vue-vimeo-player"
 import Footer from "@/components/Footer.vue"
 import PronunciationMenu from "@/components/PronunciationMenu.vue"
-import { mapState } from "vuex"
+import { mapState, mapActions } from "vuex"
 import AuthUserMenu from "@/components/AuthUserMenu.vue"
 
 export default {
@@ -456,10 +489,13 @@ export default {
       return isPhone(this.$vuetify)
     },
     blogUrl() {
-      return window.__TIMEFUL_CONFIG__?.blogUrl || 'https://schej-blog.vercel.app/blog/'
+      return (
+        window.__TIMEFUL_CONFIG__?.blogUrl ||
+        "https://schej-blog.vercel.app/blog/"
+      )
     },
     blogButtonText() {
-      return window.__TIMEFUL_CONFIG__?.blogButtonText || 'Blog'
+      return window.__TIMEFUL_CONFIG__?.blogButtonText || "Blog"
     },
     blogEnabled() {
       return window.__TIMEFUL_CONFIG__?.blogEnabled ?? true
@@ -467,6 +503,7 @@ export default {
   },
 
   methods: {
+    ...mapActions(["createNew"]),
     loadRiveAnimation() {
       // if (!this.rive) {
       //   this.rive = new Rive({
@@ -510,6 +547,9 @@ export default {
     },
     openDashboard() {
       this.$router.push({ name: "home" })
+    },
+    openCreateEvent() {
+      this.createNew({ eventOnly: false })
     },
   },
 
