@@ -192,6 +192,7 @@
               counter="500"
               maxlength="500"
               autofocus
+              text-field-class="tw-text-xs sm:tw-text-sm"
             />
             <div class="tw-flex tw-gap-1">
               <v-btn

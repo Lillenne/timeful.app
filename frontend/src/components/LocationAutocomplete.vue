@@ -9,6 +9,7 @@
       :counter="counter"
       :maxlength="maxlength"
       :autofocus="autofocus"
+      :class="textFieldClass"
       ref="textField"
       @focus="onFocus"
       @blur="onBlur"
@@ -69,6 +70,10 @@ export default {
     autofocus: {
       type: Boolean,
       default: false,
+    },
+    textFieldClass: {
+      type: String,
+      default: "",
     },
   },
 
