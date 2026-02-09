@@ -8,6 +8,8 @@
       :solo="solo"
       :counter="counter"
       :maxlength="maxlength"
+      :autofocus="autofocus"
+      :class="textFieldClass"
       ref="textField"
       @focus="onFocus"
       @blur="onBlur"
@@ -64,6 +66,14 @@ export default {
     maxlength: {
       type: String,
       default: "500",
+    },
+    autofocus: {
+      type: Boolean,
+      default: false,
+    },
+    textFieldClass: {
+      type: String,
+      default: "",
     },
   },
 
