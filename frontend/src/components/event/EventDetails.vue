@@ -189,7 +189,6 @@
               v-model="newLocation"
               placeholder="Enter a location..."
               hide-details="auto"
-              :solo="false"
               counter="500"
               maxlength="500"
             />
