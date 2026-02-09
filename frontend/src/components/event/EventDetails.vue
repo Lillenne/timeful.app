@@ -560,7 +560,8 @@ export default {
           recurrenceEnabled: false,
         })
 
-        this.showError("Recurring event creation has been stopped")
+        // Using console.log for success as showError is for errors
+        console.log("Recurring event creation has been stopped")
       } catch (err) {
         console.error(err)
         this.showError("Failed to stop recurring event! Please try again later.")

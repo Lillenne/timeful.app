@@ -14,6 +14,20 @@ import (
 "schej.it/server/utils"
 )
 
+// calculateNextDate calculates the next date based on the recurrence interval and unit
+func calculateNextDate(baseTime time.Time, interval int, unit string) (time.Time, error) {
+switch unit {
+case "days":
+return baseTime.AddDate(0, 0, interval), nil
+case "weeks":
+return baseTime.AddDate(0, 0, interval*7), nil
+case "months":
+return baseTime.AddDate(0, interval, 0), nil
+default:
+return time.Time{}, fmt.Errorf("invalid recurrence unit: %s", unit)
+}
+}
+
 // StartRecurringEventScheduler starts a scheduler that checks every hour for recurring events that need new instances created
 func StartRecurringEventScheduler() {
 logger.StdOut.Println("Starting recurring event scheduler...")
@@ -87,20 +101,10 @@ return fmt.Errorf("invalid recurrence configuration")
 
 newDates := make([]primitive.DateTime, len(parentEvent.Dates))
 for i, date := range parentEvent.Dates {
-oldTime := date.Time()
-var newTime time.Time
-
-switch unit {
-case "days":
-newTime = oldTime.AddDate(0, 0, interval)
-case "weeks":
-newTime = oldTime.AddDate(0, 0, interval*7)
-case "months":
-newTime = oldTime.AddDate(0, interval, 0)
-default:
-return fmt.Errorf("invalid recurrence unit: %s", unit)
+newTime, err := calculateNextDate(date.Time(), interval, unit)
+if err != nil {
+return err
 }
-
 newDates[i] = primitive.NewDateTimeFromTime(newTime)
 }
 
@@ -109,18 +113,10 @@ var newTimes []primitive.DateTime
 if parentEvent.Times != nil && len(parentEvent.Times) > 0 {
 newTimes = make([]primitive.DateTime, len(parentEvent.Times))
 for i, timeVal := range parentEvent.Times {
-oldTime := timeVal.Time()
-var newTime time.Time
-
-switch unit {
-case "days":
-newTime = oldTime.AddDate(0, 0, interval)
-case "weeks":
-newTime = oldTime.AddDate(0, 0, interval*7)
-case "months":
-newTime = oldTime.AddDate(0, interval, 0)
+newTime, err := calculateNextDate(timeVal.Time(), interval, unit)
+if err != nil {
+return err
 }
-
 newTimes[i] = primitive.NewDateTimeFromTime(newTime)
 }
 }
@@ -202,14 +198,9 @@ latestDate = date.Time()
 }
 }
 
-var nextEventDate time.Time
-switch unit {
-case "days":
-nextEventDate = latestDate.AddDate(0, 0, interval)
-case "weeks":
-nextEventDate = latestDate.AddDate(0, 0, interval*7)
-case "months":
-nextEventDate = latestDate.AddDate(0, interval, 0)
+nextEventDate, err := calculateNextDate(latestDate, interval, unit)
+if err != nil {
+return fmt.Errorf("error calculating next occurrence date: %v", err)
 }
 
 // Subtract advance days to get when to create the event
