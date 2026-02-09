@@ -191,6 +191,7 @@
               hide-details="auto"
               counter="500"
               maxlength="500"
+              autofocus
             />
             <div class="tw-flex tw-gap-1">
               <v-btn
