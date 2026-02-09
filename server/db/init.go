@@ -71,3 +71,8 @@ func Init() func() {
 func GetEventsCollection() *mongo.Collection {
 	return EventsCollection
 }
+
+// GetUsersCollection returns the users collection for use by other packages
+func GetUsersCollection() *mongo.Collection {
+	return UsersCollection
+}

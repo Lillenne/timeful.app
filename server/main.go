@@ -126,7 +126,7 @@ func main() {
 	// Start reminder email scheduler for Listmonk using robfig/cron
 	ctx, cancelScheduler := context.WithCancel(context.Background())
 	defer cancelScheduler()
-	listmonk.StartReminderEmailScheduler(ctx, db.GetEventsCollection())
+	listmonk.StartReminderEmailScheduler(ctx, db.GetEventsCollection(), db.GetUsersCollection())
 
 	// Session
 	store := cookie.NewStore([]byte("secret"))

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -145,6 +146,7 @@ func DoesUserExist(email string) (bool, *int) {
 // Send a transactional email using the specified template and data
 func SendEmail(email string, templateId int, data bson.M) {
 	if os.Getenv("LISTMONK_ENABLED") == "false" {
+		logger.StdOut.Printf("Listmonk disabled - skipping email to %s (template %d)\n", email, templateId)
 		return
 	}
 
@@ -152,6 +154,18 @@ func SendEmail(email string, templateId int, data bson.M) {
 	listmonkUrl := os.Getenv("LISTMONK_URL")
 	listmonkUsername := os.Getenv("LISTMONK_USERNAME")
 	listmonkPassword := os.Getenv("LISTMONK_PASSWORD")
+
+	// Validate configuration
+	if listmonkUrl == "" {
+		logger.StdErr.Printf("ERROR: LISTMONK_URL not configured - cannot send email to %s\n", email)
+		return
+	}
+	if listmonkUsername == "" || listmonkPassword == "" {
+		logger.StdErr.Printf("ERROR: LISTMONK_USERNAME or LISTMONK_PASSWORD not configured - cannot send email to %s\n", email)
+		return
+	}
+
+	logger.StdOut.Printf("Sending email to %s using template %d via Listmonk at %s\n", email, templateId, listmonkUrl)
 
 	// Construct body using external mode to send to arbitrary email addresses
 	// This doesn't require the email to be a subscriber in Listmonk
@@ -163,22 +177,36 @@ func SendEmail(email string, templateId int, data bson.M) {
 		"content_type":      "html",
 	})
 	if err != nil {
-		logger.StdErr.Println(err)
+		logger.StdErr.Printf("ERROR: Failed to marshal email request for %s: %v\n", email, err)
 		return
 	}
 
+	logger.StdOut.Printf("Email request payload: %s\n", string(body))
+
 	// Construct request
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/tx", listmonkUrl), bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/tx", listmonkUrl), bytes.NewBuffer(body))
+	if err != nil {
+		logger.StdErr.Printf("ERROR: Failed to create HTTP request for %s: %v\n", email, err)
+		return
+	}
 	req.SetBasicAuth(listmonkUsername, listmonkPassword)
 	req.Header.Set("Content-Type", "application/json")
 
 	// Execute request
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
-		logger.StdErr.Println(err)
+		logger.StdErr.Printf("ERROR: Failed to send email to %s via Listmonk: %v\n", email, err)
 		return
 	}
 	defer response.Body.Close()
+
+	// Read and log response
+	bodyBytes, _ := io.ReadAll(response.Body)
+	if response.StatusCode >= 200 && response.StatusCode < 300 {
+		logger.StdOut.Printf("SUCCESS: Email sent to %s (status %d). Response: %s\n", email, response.StatusCode, string(bodyBytes))
+	} else {
+		logger.StdErr.Printf("ERROR: Listmonk returned status %d for email to %s. Response: %s\n", response.StatusCode, email, string(bodyBytes))
+	}
 }
 
 // SendEmailAddSubscriberIfNotExist sends a transactional email using external mode
@@ -186,12 +214,16 @@ func SendEmail(email string, templateId int, data bson.M) {
 // Uses external mode - does not require subscribers to exist in Listmonk for transactional emails
 func SendEmailAddSubscriberIfNotExist(email string, templateId int, data bson.M, sendMarketingEmails bool) {
 	if os.Getenv("LISTMONK_ENABLED") == "false" {
+		logger.StdOut.Printf("Listmonk disabled - skipping email to %s (template %d)\n", email, templateId)
 		return
 	}
+
+	logger.StdOut.Printf("Sending transactional email to %s (template %d, marketing: %v)\n", email, templateId, sendMarketingEmails)
 
 	// Optionally add to marketing list if requested
 	if sendMarketingEmails {
 		if exists, _ := DoesUserExist(email); !exists {
+			logger.StdOut.Printf("Adding %s to marketing list\n", email)
 			AddUserToListmonk(email, "", "", "", nil, true)
 		}
 	}
@@ -261,7 +293,7 @@ func ScheduleReminderEmails(email string, ownerName string, eventName string, ev
 
 // StartReminderEmailScheduler starts a background worker using a cron scheduler
 // to check for and send scheduled reminder emails every minute
-func StartReminderEmailScheduler(ctx context.Context, eventsCollection *mongo.Collection) *cron.Cron {
+func StartReminderEmailScheduler(ctx context.Context, eventsCollection *mongo.Collection, usersCollection *mongo.Collection) *cron.Cron {
 	if os.Getenv("LISTMONK_ENABLED") == "false" {
 		logger.StdOut.Println("Listmonk disabled, reminder email scheduler not started")
 		return nil
@@ -274,7 +306,7 @@ func StartReminderEmailScheduler(ctx context.Context, eventsCollection *mongo.Co
 
 	// Schedule the job to run every minute
 	_, err := c.AddFunc("* * * * *", func() {
-		sendScheduledReminders(eventsCollection)
+		sendScheduledReminders(eventsCollection, usersCollection)
 	})
 	if err != nil {
 		logger.StdErr.Printf("Error scheduling reminder email job: %v\n", err)
@@ -295,13 +327,16 @@ func StartReminderEmailScheduler(ctx context.Context, eventsCollection *mongo.Co
 }
 
 // sendScheduledReminders checks for and sends any due reminder emails
-func sendScheduledReminders(eventsCollection *mongo.Collection) {
-	if eventsCollection == nil {
+func sendScheduledReminders(eventsCollection *mongo.Collection, usersCollection *mongo.Collection) {
+	if eventsCollection == nil || usersCollection == nil {
+		logger.StdErr.Println("ERROR: Collections not initialized for sendScheduledReminders")
 		return
 	}
 
 	ctx := context.Background()
 	now := primitive.NewDateTimeFromTime(time.Now())
+
+	logger.StdOut.Printf("Checking for scheduled reminders at %v\n", time.Now())
 
 	// Find all events with remindees that have unsent scheduled reminders
 	filter := bson.M{
@@ -324,6 +359,7 @@ func sendScheduledReminders(eventsCollection *mongo.Collection) {
 	}
 	defer cursor.Close(ctx)
 
+	reminderCount := 0
 	for cursor.Next(ctx) {
 		var event bson.M
 		if err := cursor.Decode(&event); err != nil {
@@ -334,15 +370,18 @@ func sendScheduledReminders(eventsCollection *mongo.Collection) {
 		eventId := event["_id"].(primitive.ObjectID).Hex()
 		eventName := event["name"].(string)
 		
-		// Get owner name
-		// Note: For reminder emails, we default to "Somebody" to avoid additional database lookups
-		// The actual owner name is already stored when the reminder is created in ScheduleReminderEmails
-		// This is acceptable since reminder emails are typically sent soon after creation
+		// Get owner name by fetching from database
 		ownerName := "Somebody"
 		if ownerId, ok := event["ownerId"].(primitive.ObjectID); ok && !ownerId.IsZero() {
-			// TODO: Optionally fetch user from database if needed for better personalization
-			// user := db.GetUserById(ownerId.Hex())
-			// ownerName = user.FirstName
+			var user bson.M
+			err := usersCollection.FindOne(ctx, bson.M{"_id": ownerId}).Decode(&user)
+			if err == nil {
+				if firstName, ok := user["firstName"].(string); ok {
+					ownerName = firstName
+				}
+			} else {
+				logger.StdErr.Printf("Warning: Could not fetch user %s for event %s: %v\n", ownerId.Hex(), eventId, err)
+			}
 		}
 
 		remindees, ok := event["remindees"].(primitive.A)
@@ -411,9 +450,13 @@ func sendScheduledReminders(eventsCollection *mongo.Collection) {
 						if templateId64, ok := reminder["templateId"].(int64); ok {
 							templateId = int32(templateId64)
 						} else {
+							logger.StdErr.Printf("Warning: Invalid templateId type for reminder in event %s\n", eventId)
 							continue
 						}
 					}
+
+					reminderCount++
+					logger.StdOut.Printf("Processing reminder %d for email %s, event %s (template %d)\n", reminderCount, email, eventName, templateId)
 
 					// Send the email
 					SendEmail(email, int(templateId), bson.M{
@@ -434,11 +477,17 @@ func sendScheduledReminders(eventsCollection *mongo.Collection) {
 					if err != nil {
 						logger.StdErr.Printf("Error marking reminder as sent: %v\n", err)
 					} else {
-						logger.StdOut.Printf("Sent reminder email to %s for event %s (template %d)\n", email, eventName, templateId)
+						logger.StdOut.Printf("Marked reminder as sent for %s in event %s\n", email, eventName)
 					}
 				}
 			}
 		}
+	}
+	
+	if reminderCount == 0 {
+		logger.StdOut.Println("No pending reminders found")
+	} else {
+		logger.StdOut.Printf("Processed %d reminder(s)\n", reminderCount)
 	}
 }
 
