@@ -81,23 +81,25 @@
     <script src="<%= BASE_URL %>config.js"></script>
     <!-- Conditionally load Google Fonts based on config -->
     <script>
-      if (window.__TIMEFUL_CONFIG__?.enableGoogleFonts) {
-        var preconnect1 = document.createElement("link")
-        preconnect1.rel = "preconnect"
-        preconnect1.href = "https://fonts.googleapis.com"
-        document.head.appendChild(preconnect1)
+      (function() {
+        if (window.__TIMEFUL_CONFIG__?.enableGoogleFonts) {
+          var preconnect1 = document.createElement("link")
+          preconnect1.rel = "preconnect"
+          preconnect1.href = "https://fonts.googleapis.com"
+          document.head.appendChild(preconnect1)
 
-        var preconnect2 = document.createElement("link")
-        preconnect2.rel = "preconnect"
-        preconnect2.href = "https://fonts.gstatic.com"
-        preconnect2.crossOrigin = "anonymous"
-        document.head.appendChild(preconnect2)
+          var preconnect2 = document.createElement("link")
+          preconnect2.rel = "preconnect"
+          preconnect2.href = "https://fonts.gstatic.com"
+          preconnect2.crossOrigin = "anonymous"
+          document.head.appendChild(preconnect2)
 
-        var fontLink = document.createElement("link")
-        fontLink.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap"
-        fontLink.rel = "stylesheet"
-        document.head.appendChild(fontLink)
-      }
+          var fontLink = document.createElement("link")
+          fontLink.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap"
+          fontLink.rel = "stylesheet"
+          document.head.appendChild(fontLink)
+        }
+      })()
     </script>
   </head>
   <body>
