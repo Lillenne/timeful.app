@@ -271,30 +271,27 @@ func ScheduleReminderEmails(email string, ownerName string, eventName string, ev
 	// Create scheduled reminders as bson.M for storage
 	// Schedule first reminder for immediate pickup (set time slightly in the past)
 	// This ensures the background scheduler picks it up within 1 minute
-	// Create separate boolean pointers for each reminder to avoid shared state
 	now := time.Now()
-	falseBool1 := false
-	falseBool2 := false
-	falseBool3 := false
 	reminders := []interface{}{
 		bson.M{
 			"templateId":  initialEmailReminderId,
 			"scheduledAt": primitive.NewDateTimeFromTime(now.Add(-1 * time.Second)), // Slightly in the past to ensure immediate pickup
-			"sent":        &falseBool1,
+			"sent":        false,
 		},
 		bson.M{
 			"templateId":  secondEmailReminderId,
 			"scheduledAt": primitive.NewDateTimeFromTime(now.Add(24 * time.Hour)),
-			"sent":        &falseBool2,
+			"sent":        false,
 		},
 		bson.M{
 			"templateId":  finalEmailReminderId,
 			"scheduledAt": primitive.NewDateTimeFromTime(now.Add(72 * time.Hour)),
-			"sent":        &falseBool3,
+			"sent":        false,
 		},
 	}
 
 	logger.StdOut.Printf("Scheduled 3 reminders for %s (immediate, 24h, and 72h)\n", email)
+	logger.StdOut.Printf("First reminder scheduled at: %v (now-1s for immediate pickup)\n", now.Add(-1*time.Second))
 
 	return reminders
 }
@@ -345,14 +342,19 @@ func sendScheduledReminders(eventsCollection *mongo.Collection, usersCollection 
 	now := primitive.NewDateTimeFromTime(time.Now())
 
 	logger.StdOut.Printf("Checking for scheduled reminders at %v\n", time.Now())
+	logger.StdOut.Printf("Query filter: looking for reminders with scheduledAt <= %v\n", time.Now())
 
 	// Find all events with remindees that have unsent scheduled reminders
+	// Query looks for reminders where sent is false or doesn't exist (for backwards compatibility)
 	filter := bson.M{
 		"remindees": bson.M{
 			"$elemMatch": bson.M{
 				"reminders": bson.M{
 					"$elemMatch": bson.M{
-						"sent":        false,
+						"$or": []bson.M{
+							{"sent": false},
+							{"sent": bson.M{"$exists": false}},
+						},
 						"scheduledAt": bson.M{"$lte": now},
 					},
 				},
@@ -367,8 +369,10 @@ func sendScheduledReminders(eventsCollection *mongo.Collection, usersCollection 
 	}
 	defer cursor.Close(ctx)
 
+	eventCount := 0
 	reminderCount := 0
 	for cursor.Next(ctx) {
+		eventCount++
 		var event bson.M
 		if err := cursor.Decode(&event); err != nil {
 			logger.StdErr.Println("Error decoding event:", err)
@@ -492,10 +496,12 @@ func sendScheduledReminders(eventsCollection *mongo.Collection, usersCollection 
 		}
 	}
 	
-	if reminderCount == 0 {
-		logger.StdOut.Println("No pending reminders found")
+	if eventCount == 0 {
+		logger.StdOut.Println("No events found with pending reminders")
+	} else if reminderCount == 0 {
+		logger.StdOut.Printf("Found %d event(s) but no pending reminders to send\n", eventCount)
 	} else {
-		logger.StdOut.Printf("Processed %d reminder(s)\n", reminderCount)
+		logger.StdOut.Printf("Processed %d reminder(s) from %d event(s)\n", reminderCount, eventCount)
 	}
 }
 
