@@ -185,15 +185,14 @@
         <div v-if="isEditingLocation" class="tw-flex tw-items-start tw-gap-2">
           <v-icon small class="tw-mt-2">mdi-map-marker</v-icon>
           <div class="tw-flex tw-flex-grow tw-flex-col tw-gap-1">
-            <v-text-field
+            <LocationAutocomplete
               v-model="newLocation"
               placeholder="Enter a location..."
-              class="tw-text-xs sm:tw-text-sm"
-              autofocus
               hide-details="auto"
+              :solo="false"
               counter="500"
               maxlength="500"
-            ></v-text-field>
+            />
             <div class="tw-flex tw-gap-1">
               <v-btn
                 small
@@ -219,9 +218,14 @@
 <script>
 import { mapActions } from "vuex"
 import { isPhone, put } from "@/utils"
+import LocationAutocomplete from "@/components/LocationAutocomplete.vue"
 
 export default {
   name: "EventDetails",
+
+  components: {
+    LocationAutocomplete,
+  },
 
   props: {
     event: {
