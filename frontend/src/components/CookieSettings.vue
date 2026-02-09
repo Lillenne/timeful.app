@@ -48,7 +48,7 @@
         </div>
       </div>
 
-      <div class="tw-rounded-lg tw-border tw-bg-white tw-p-5">
+      <div v-if="isAdvertisingEnabled" class="tw-rounded-lg tw-border tw-bg-white tw-p-5">
         <div>
           <v-checkbox v-model="preferences.advertising">
             <template v-slot:label>
@@ -107,9 +107,14 @@ export default {
       preferences: {
         necessary: true,
         analytics: true,
-        advertising: true,
+        advertising: false, // Default to off
       },
     }
+  },
+  computed: {
+    isAdvertisingEnabled() {
+      return window.__TIMEFUL_CONFIG__?.enableAdvertising || false
+    },
   },
   mounted() {
     this.loadCurrentSettings()
@@ -130,7 +135,8 @@ export default {
       this.preferences = {
         necessary: true,
         analytics: true,
-        advertising: true,
+        // Enable advertising only if enableAdvertising config is true
+        advertising: window.__TIMEFUL_CONFIG__?.enableAdvertising || false,
       }
       this.saveConsent()
     },

@@ -18,7 +18,7 @@
     <p
       class="tw-text-gray-600 tw-m-0 tw-px-4 tw-py-2 tw-text-xs tw-leading-tight"
     >
-      We use cookies for analytics to improve our product. Choose your
+      We use cookies for analytics{{ isAdvertisingEnabled ? ' and advertising' : '' }} to improve our product. Choose your
       preferences below.
     </p>
 
@@ -43,11 +43,11 @@
           </template>
         </v-checkbox>
 
-        <!-- <v-checkbox v-model="preferences.advertising" hide-details>
-        <template v-slot:label>
-          <span class="tw-flex-1 tw-text-gray-700 tw-font-medium tw-text-sm">Advertising</span>
-        </template>
-      </v-checkbox> -->
+        <v-checkbox v-if="isAdvertisingEnabled" v-model="preferences.advertising" hide-details>
+          <template v-slot:label>
+            <span class="tw-flex-1 tw-text-gray-700 tw-font-medium tw-text-sm">Advertising</span>
+          </template>
+        </v-checkbox>
       </div>
     </v-expand-transition>
 
@@ -90,9 +90,14 @@ export default {
       preferences: {
         necessary: true,
         analytics: true,
-        advertising: true,
+        advertising: false, // Default to off
       },
     }
+  },
+  computed: {
+    isAdvertisingEnabled() {
+      return window.__TIMEFUL_CONFIG__?.enableAdvertising || false
+    },
   },
   created() {
     this.checkConsentStatus()
@@ -117,7 +122,8 @@ export default {
       this.preferences = {
         necessary: true,
         analytics: true,
-        advertising: true,
+        // Enable advertising only if enableAdvertising config is true
+        advertising: window.__TIMEFUL_CONFIG__?.enableAdvertising || false,
       }
       this.saveConsent()
     },

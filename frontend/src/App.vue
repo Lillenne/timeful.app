@@ -100,7 +100,7 @@
 </template>
 
 <style>
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans&display=swap");
+/* Google Fonts loaded conditionally in index.html based on enableGoogleFonts config */
 
 html {
   overflow-y: auto !important;
@@ -109,7 +109,7 @@ html {
 }
 
 * {
-  font-family: "DM Sans", sans-serif;
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   /* touch-action: manipulation !important; */
 }
 
