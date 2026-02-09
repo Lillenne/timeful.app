@@ -88,11 +88,11 @@
             <v-btn
               class="tw-rounded-lg tw-bg-green tw-px-10 tw-text-base sm:tw-px-10 lg:tw-px-12"
               dark
-              @click="openCreateEvent"
+              @click="openCreateNew"
               large
               :x-large="$vuetify.breakpoint.mdAndUp"
             >
-              + Create New
+              + Create new
             </v-btn>
             <v-btn
               class="tw-rounded-lg tw-bg-white tw-px-10 tw-text-base tw-text-green sm:tw-px-10 lg:tw-px-12"
@@ -548,7 +548,7 @@ export default {
     openDashboard() {
       this.$router.push({ name: "home" })
     },
-    openCreateEvent() {
+    openCreateNew() {
       this.createNew({ eventOnly: false })
     },
   },
