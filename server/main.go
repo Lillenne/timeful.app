@@ -23,6 +23,7 @@ import (
 	"schej.it/server/logger"
 	"schej.it/server/routes"
 	"schej.it/server/services/gcloud"
+	"schej.it/server/services/scheduler"
 	"schej.it/server/slackbot"
 	"schej.it/server/utils"
 
@@ -120,6 +121,9 @@ func main() {
 	// Init google cloud stuff
 	closeTasks := gcloud.InitTasks()
 	defer closeTasks()
+
+	// Start recurring event scheduler
+	scheduler.StartRecurringEventScheduler()
 
 	// Session
 	store := cookie.NewStore([]byte("secret"))

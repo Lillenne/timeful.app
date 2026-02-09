@@ -100,6 +100,15 @@ type Event struct {
 
 	// Whether the user has responded to the availability group (fetched based on whether user is in Attendees)
 	HasResponded *bool `json:"hasResponded" bson:"-"`
+
+	// Recurring event fields
+	IsRecurring           *bool              `json:"isRecurring" bson:"isRecurring,omitempty"`
+	RecurrenceInterval    *int               `json:"recurrenceInterval" bson:"recurrenceInterval,omitempty"`    // Number of units between recurrences
+	RecurrenceUnit        *string            `json:"recurrenceUnit" bson:"recurrenceUnit,omitempty"`            // "days", "weeks", or "months"
+	RecurrenceAdvanceDays *int               `json:"recurrenceAdvanceDays" bson:"recurrenceAdvanceDays,omitempty"` // Days in advance to create next occurrence
+	ParentEventId         primitive.ObjectID `json:"parentEventId" bson:"parentEventId,omitempty"`              // Reference to parent event if this is a recurring instance
+	RecurrenceEnabled     *bool              `json:"recurrenceEnabled" bson:"recurrenceEnabled,omitempty"`      // Whether to continue creating future occurrences
+	NextOccurrenceDate    *primitive.DateTime `json:"nextOccurrenceDate" bson:"nextOccurrenceDate,omitempty"`   // When the next occurrence should be created
 }
 
 func (e *Event) GetId() string {

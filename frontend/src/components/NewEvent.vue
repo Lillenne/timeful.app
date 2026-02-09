@@ -275,6 +275,71 @@
           </ExpandableSection>
 
           <ExpandableSection
+            v-if="authUser && !guestEvent && !edit"
+            label="Recurring event"
+            v-model="showRecurringOptions"
+            :auto-scroll="dialog"
+          >
+            <div class="tw-flex tw-flex-col tw-gap-5 tw-pt-2">
+              <v-checkbox
+                v-model="isRecurring"
+                hide-details
+              >
+                <template v-slot:label>
+                  <span class="tw-text-sm tw-text-black">
+                    Make this a recurring event
+                  </span>
+                </template>
+              </v-checkbox>
+
+              <v-expand-transition>
+                <div v-if="isRecurring" class="tw-flex tw-flex-col tw-gap-5">
+                  <div class="tw-text-xs tw-text-dark-gray">
+                    The next occurrence will be automatically created based on your settings below
+                  </div>
+
+                  <div class="tw-flex tw-items-center tw-gap-x-2">
+                    <div class="tw-text-sm tw-text-black">Repeat every:</div>
+                    <v-text-field
+                      v-model.number="recurrenceInterval"
+                      type="number"
+                      min="1"
+                      dense
+                      class="tw-w-20"
+                      hide-details
+                      solo
+                      :rules="recurrenceIntervalRules"
+                    />
+                    <v-select
+                      v-model="recurrenceUnit"
+                      dense
+                      class="tw-w-32"
+                      hide-details
+                      solo
+                      :items="recurrenceUnitOptions"
+                    />
+                  </div>
+
+                  <div class="tw-flex tw-items-center tw-gap-x-2">
+                    <div class="tw-text-sm tw-text-black">Create event:</div>
+                    <v-text-field
+                      v-model.number="recurrenceAdvanceDays"
+                      type="number"
+                      min="0"
+                      dense
+                      class="tw-w-20"
+                      hide-details
+                      solo
+                      :rules="recurrenceAdvanceDaysRules"
+                    />
+                    <div class="tw-text-sm tw-text-black">days in advance</div>
+                  </div>
+                </div>
+              </v-expand-transition>
+            </div>
+          </ExpandableSection>
+
+          <ExpandableSection
             v-model="showAdvancedOptions"
             label="Options"
             :auto-scroll="dialog"
@@ -578,6 +643,14 @@ export default {
     showEmailReminders: false,
     emails: [], // For email reminders
 
+    // Recurring event options
+    showRecurringOptions: false,
+    isRecurring: false,
+    recurrenceInterval: 1,
+    recurrenceUnit: "weeks",
+    recurrenceAdvanceDays: 2,
+    recurrenceUnitOptions: ["days", "weeks", "months"],
+
     // Advanced options
     showAdvancedOptions: false,
     timeIncrement: 15,
@@ -628,6 +701,18 @@ export default {
       return [
         (selectedDays) =>
           selectedDays.length > 0 || "Please select at least one day",
+      ]
+    },
+    recurrenceIntervalRules() {
+      return [
+        (v) => v > 0 || "Interval must be greater than 0",
+        (v) => Number.isInteger(Number(v)) || "Interval must be a whole number",
+      ]
+    },
+    recurrenceAdvanceDaysRules() {
+      return [
+        (v) => v >= 0 || "Advance days must be 0 or greater",
+        (v) => Number.isInteger(Number(v)) || "Advance days must be a whole number",
       ]
     },
     addedEmails() {
@@ -802,6 +887,10 @@ export default {
         startOnMonday: this.startOnMonday,
         timeIncrement: this.timeIncrement,
         creatorPosthogId: this.$posthog?.get_distinct_id(),
+        isRecurring: this.isRecurring,
+        recurrenceInterval: this.isRecurring ? this.recurrenceInterval : null,
+        recurrenceUnit: this.isRecurring ? this.recurrenceUnit : null,
+        recurrenceAdvanceDays: this.isRecurring ? this.recurrenceAdvanceDays : null,
       }
 
       const posthogPayload = {
