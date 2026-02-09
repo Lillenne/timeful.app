@@ -259,7 +259,6 @@ export default {
     },
     showScheduleEventButton() {
       return (
-        !this.event.daysOnly &&
         this.numResponses > 0 &&
         this.state !== this.states.EDIT_AVAILABILITY &&
         (this.guestEvent || this.isOwner)
