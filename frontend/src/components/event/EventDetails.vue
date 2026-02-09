@@ -212,6 +212,35 @@
           </div>
         </div>
       </div>
+
+      <!-- Recurring Event Section -->
+      <div v-if="event.isRecurring" class="tw-flex tw-flex-col tw-gap-1">
+        <div class="tw-flex tw-items-start tw-gap-2">
+          <v-icon small class="tw-mt-0.5">mdi-repeat</v-icon>
+          <div class="tw-grow tw-space-y-1 tw-text-xs tw-font-normal tw-text-very-dark-gray sm:tw-text-sm">
+            <div class="tw-min-h-6 tw-leading-6">
+              Repeats every {{ event.recurrenceInterval }} {{ event.recurrenceUnit }}
+              <span v-if="event.recurrenceAdvanceDays > 0">
+                (created {{ event.recurrenceAdvanceDays }} {{ event.recurrenceAdvanceDays === 1 ? 'day' : 'days' }} in advance)
+              </span>
+            </div>
+            <div v-if="event.recurrenceEnabled === false" class="tw-text-xs tw-italic tw-text-dark-gray">
+              Recurring event creation has been stopped
+            </div>
+          </div>
+          <v-btn
+            v-if="canEdit && event.recurrenceEnabled !== false"
+            small
+            outlined
+            color="error"
+            @click="stopRecurringEvent"
+            :loading="stoppingRecurring"
+            class="tw-text-xs"
+          >
+            Stop recurring
+          </v-btn>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -252,6 +281,7 @@ export default {
       mapInitialized: false,
       mapLat: null,
       mapLon: null,
+      stoppingRecurring: false,
     }
   },
 
@@ -503,6 +533,40 @@ export default {
       mapContainer.innerHTML = ""
       mapContainer.appendChild(iframe)
       this.mapInitialized = true
+    },
+
+    async stopRecurringEvent() {
+      if (!confirm("Are you sure you want to stop creating future recurring events? This cannot be undone.")) {
+        return
+      }
+
+      this.stoppingRecurring = true
+
+      try {
+        const eventPayload = {
+          name: this.event.name,
+          duration: this.event.duration,
+          dates: this.event.dates,
+          type: this.event.type,
+          description: this.event.description,
+          location: this.event.location,
+          recurrenceEnabled: false,
+        }
+
+        await put(`/events/${this.event._id}`, eventPayload)
+        
+        this.$emit("update:event", {
+          ...this.event,
+          recurrenceEnabled: false,
+        })
+
+        this.showError("Recurring event creation has been stopped")
+      } catch (err) {
+        console.error(err)
+        this.showError("Failed to stop recurring event! Please try again later.")
+      } finally {
+        this.stoppingRecurring = false
+      }
     },
   },
 }
