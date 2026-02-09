@@ -90,7 +90,7 @@ export default {
       preferences: {
         necessary: true,
         analytics: true,
-        advertising: true,
+        advertising: false, // No advertising cookies
       },
     }
   },
@@ -117,7 +117,7 @@ export default {
       this.preferences = {
         necessary: true,
         analytics: true,
-        advertising: true,
+        advertising: false, // No advertising cookies
       }
       this.saveConsent()
     },

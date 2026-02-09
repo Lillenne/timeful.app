@@ -100,7 +100,8 @@
 </template>
 
 <style>
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans&display=swap");
+/* Google Fonts removed to disable unnecessary trackers - using system fonts instead */
+/* @import url("https://fonts.googleapis.com/css2?family=DM+Sans&display=swap"); */
 
 html {
   overflow-y: auto !important;
@@ -109,7 +110,7 @@ html {
 }
 
 * {
-  font-family: "DM Sans", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   /* touch-action: manipulation !important; */
 }
 
