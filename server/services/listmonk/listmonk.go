@@ -233,7 +233,7 @@ func SendEmailAddSubscriberIfNotExist(email string, templateId int, data bson.M,
 }
 
 // ScheduleReminderEmails schedules three reminder emails for an event
-// Sends the first reminder immediately and schedules the remaining two
+// All reminders are scheduled via the background cron job
 // Returns a slice of bson.M objects to be stored in the Remindee model's Reminders field
 func ScheduleReminderEmails(email string, ownerName string, eventName string, eventId string) []interface{} {
 	if os.Getenv("LISTMONK_ENABLED") == "false" {
@@ -268,35 +268,19 @@ func ScheduleReminderEmails(email string, ownerName string, eventName string, ev
 		AddUserToListmonk(email, "", "", "", nil, false)
 	}
 
-	// Construct URLs for reminder emails
-	baseUrl := os.Getenv("BASE_URL")
-	if baseUrl == "" {
-		baseUrl = "http://localhost:3002"
-	}
-	eventUrl := fmt.Sprintf("%s/e/%s", baseUrl, eventId)
-	finishedUrl := fmt.Sprintf("%s/e/%s/responded?email=%s", baseUrl, eventId, email)
-
-	// Send the first reminder immediately
-	logger.StdOut.Printf("Sending initial reminder immediately to %s for event %s\n", email, eventId)
-	trueBool1 := true
-	SendEmail(email, initialEmailReminderId, bson.M{
-		"ownerName":   ownerName,
-		"eventName":   eventName,
-		"eventUrl":    eventUrl,
-		"finishedUrl": finishedUrl,
-	})
-
-	// Create scheduled reminders for the remaining two
-	// The first reminder is marked as sent since we just sent it
+	// Create scheduled reminders as bson.M for storage
+	// Schedule first reminder for immediate pickup (set time slightly in the past)
+	// This ensures the background scheduler picks it up within 1 minute
 	// Create separate boolean pointers for each reminder to avoid shared state
 	now := time.Now()
+	falseBool1 := false
 	falseBool2 := false
 	falseBool3 := false
 	reminders := []interface{}{
 		bson.M{
 			"templateId":  initialEmailReminderId,
-			"scheduledAt": primitive.NewDateTimeFromTime(now),
-			"sent":        &trueBool1, // Already sent
+			"scheduledAt": primitive.NewDateTimeFromTime(now.Add(-1 * time.Second)), // Slightly in the past to ensure immediate pickup
+			"sent":        &falseBool1,
 		},
 		bson.M{
 			"templateId":  secondEmailReminderId,
@@ -310,7 +294,7 @@ func ScheduleReminderEmails(email string, ownerName string, eventName string, ev
 		},
 	}
 
-	logger.StdOut.Printf("Scheduled 2 additional reminders for %s (24h and 72h)\n", email)
+	logger.StdOut.Printf("Scheduled 3 reminders for %s (immediate, 24h, and 72h)\n", email)
 
 	return reminders
 }
