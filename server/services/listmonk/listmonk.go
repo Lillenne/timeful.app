@@ -2,14 +2,48 @@ package listmonk
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
+	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"schej.it/server/logger"
+)
+
+// GetTemplateID retrieves a template ID from environment variables with error handling
+func GetTemplateID(envVar string, defaultValue int) int {
+	if value := os.Getenv(envVar); value != "" {
+		if id, err := strconv.Atoi(value); err == nil {
+			return id
+		}
+		logger.StdErr.Printf("Warning: Invalid %s value '%s', using default %d\n", envVar, value, defaultValue)
+	}
+	if defaultValue == 0 {
+		logger.StdErr.Printf("Warning: %s not set and no default provided\n", envVar)
+	}
+	return defaultValue
+}
+
+// Template ID environment variable names
+const (
+	EnvEveryoneRespondedTemplateID        = "LISTMONK_EVERYONE_RESPONDED_TEMPLATE_ID"
+	EnvAvailabilityGroupInviteTemplateID  = "LISTMONK_AVAILABILITY_GROUP_INVITE_TEMPLATE_ID"
+	EnvSomeoneRespondedEventTemplateID    = "LISTMONK_SOMEONE_RESPONDED_EVENT_TEMPLATE_ID"
+	EnvAddedAttendeeTemplateID            = "LISTMONK_ADDED_ATTENDEE_TEMPLATE_ID"
+	EnvSomeoneRespondedGroupTemplateID    = "LISTMONK_SOMEONE_RESPONDED_GROUP_TEMPLATE_ID"
+	EnvXResponsesTemplateID               = "LISTMONK_X_RESPONSES_TEMPLATE_ID"
+	EnvInitialEmailReminderID             = "LISTMONK_INITIAL_EMAIL_REMINDER_ID"
+	EnvSecondEmailReminderID              = "LISTMONK_SECOND_EMAIL_REMINDER_ID"
+	EnvFinalEmailReminderID               = "LISTMONK_FINAL_EMAIL_REMINDER_ID"
 )
 
 // Adds the given user to the Listmonk contact list
@@ -112,6 +146,7 @@ func DoesUserExist(email string) (bool, *int) {
 // Send a transactional email using the specified template and data
 func SendEmail(email string, templateId int, data bson.M) {
 	if os.Getenv("LISTMONK_ENABLED") == "false" {
+		logger.StdOut.Printf("Listmonk disabled - skipping email to %s (template %d)\n", email, templateId)
 		return
 	}
 
@@ -120,40 +155,425 @@ func SendEmail(email string, templateId int, data bson.M) {
 	listmonkUsername := os.Getenv("LISTMONK_USERNAME")
 	listmonkPassword := os.Getenv("LISTMONK_PASSWORD")
 
-	// Construct body
-	body, err := json.Marshal(bson.M{
-		"subscriber_email": email,
-		"template_id":      templateId,
-		"data":             data,
-		"content_type":     "html",
-	})
-	if err != nil {
-		logger.StdErr.Println(err)
+	// Validate configuration
+	if listmonkUrl == "" {
+		logger.StdErr.Printf("ERROR: LISTMONK_URL not configured - cannot send email to %s\n", email)
+		return
+	}
+	if listmonkUsername == "" || listmonkPassword == "" {
+		logger.StdErr.Printf("ERROR: LISTMONK_USERNAME or LISTMONK_PASSWORD not configured - cannot send email to %s\n", email)
 		return
 	}
 
+	logger.StdOut.Printf("Sending email to %s using template %d via Listmonk at %s\n", email, templateId, listmonkUrl)
+
+	// Construct body using external mode to send to arbitrary email addresses
+	// This doesn't require the email to be a subscriber in Listmonk
+	body, err := json.Marshal(bson.M{
+		"subscriber_mode":   "external",
+		"subscriber_emails": []string{email},
+		"template_id":       templateId,
+		"data":              data,
+		"content_type":      "html",
+	})
+	if err != nil {
+		logger.StdErr.Printf("ERROR: Failed to marshal email request for %s: %v\n", email, err)
+		return
+	}
+
+	logger.StdOut.Printf("Email request payload: %s\n", string(body))
+
 	// Construct request
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/tx", listmonkUrl), bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/tx", listmonkUrl), bytes.NewBuffer(body))
+	if err != nil {
+		logger.StdErr.Printf("ERROR: Failed to create HTTP request for %s: %v\n", email, err)
+		return
+	}
 	req.SetBasicAuth(listmonkUsername, listmonkPassword)
 	req.Header.Set("Content-Type", "application/json")
 
 	// Execute request
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
-		logger.StdErr.Println(err)
+		logger.StdErr.Printf("ERROR: Failed to send email to %s via Listmonk: %v\n", email, err)
+		return
 	}
 	defer response.Body.Close()
+
+	// Read and log response
+	bodyBytes, _ := io.ReadAll(response.Body)
+	if response.StatusCode >= 200 && response.StatusCode < 300 {
+		logger.StdOut.Printf("SUCCESS: Email sent to %s (status %d). Response: %s\n", email, response.StatusCode, string(bodyBytes))
+	} else {
+		logger.StdErr.Printf("ERROR: Listmonk returned status %d for email to %s. Response: %s\n", response.StatusCode, email, string(bodyBytes))
+	}
 }
 
-// Send a transactional email using the specified template and data. Adds subscriber if they don't exist
+// SendEmailAddSubscriberIfNotExist sends a transactional email using external mode
+// Optionally adds the user as a subscriber for marketing emails if requested
+// Uses external mode - does not require subscribers to exist in Listmonk for transactional emails
 func SendEmailAddSubscriberIfNotExist(email string, templateId int, data bson.M, sendMarketingEmails bool) {
 	if os.Getenv("LISTMONK_ENABLED") == "false" {
+		logger.StdOut.Printf("Listmonk disabled - skipping email to %s (template %d)\n", email, templateId)
 		return
 	}
 
-	if exists, _ := DoesUserExist(email); !exists {
-		AddUserToListmonk(email, "", "", "", nil, sendMarketingEmails)
+	logger.StdOut.Printf("Sending transactional email to %s (template %d, marketing: %v)\n", email, templateId, sendMarketingEmails)
+
+	// Optionally add to marketing list if requested
+	if sendMarketingEmails {
+		if exists, _ := DoesUserExist(email); !exists {
+			logger.StdOut.Printf("Adding %s to marketing list\n", email)
+			AddUserToListmonk(email, "", "", "", nil, true)
+		}
 	}
 
+	// Send transactional email using external mode
 	SendEmail(email, templateId, data)
+}
+
+// ScheduleReminderEmails schedules three reminder emails for an event
+// All reminders are scheduled via the background cron job
+// Returns a slice of bson.M objects to be stored in the Remindee model's Reminders field
+func ScheduleReminderEmails(email string, ownerName string, eventName string, eventId string) []interface{} {
+	if os.Getenv("LISTMONK_ENABLED") == "false" {
+		logger.StdOut.Printf("Listmonk disabled - skipping reminder setup for %s\n", email)
+		return []interface{}{}
+	}
+
+	// Get email template ids using GetTemplateID helper with defaults
+	// Default template IDs: 1 (initial), 2 (24h reminder), 3 (72h reminder)
+	initialEmailReminderId := GetTemplateID(EnvInitialEmailReminderID, 1)
+	secondEmailReminderId := GetTemplateID(EnvSecondEmailReminderID, 2)
+	finalEmailReminderId := GetTemplateID(EnvFinalEmailReminderID, 3)
+	
+	logger.StdOut.Printf("Using reminder template IDs: initial=%d, 24h=%d, 72h=%d for %s\n", 
+		initialEmailReminderId, secondEmailReminderId, finalEmailReminderId, email)
+
+	logger.StdOut.Printf("Setting up reminders for %s (event: %s)\n", email, eventId)
+
+	// Find if subscriber exists in listmonk
+	subscriberExists, _ := DoesUserExist(email)
+
+	// If subscriber doesn't exist, add subscriber to listmonk
+	if !subscriberExists {
+		AddUserToListmonk(email, "", "", "", nil, false)
+	}
+
+	// Create scheduled reminders as bson.M for storage
+	// Schedule first reminder for immediate pickup (set time slightly in the past)
+	// This ensures the background scheduler picks it up within 1 minute
+	now := time.Now()
+	reminders := []interface{}{
+		bson.M{
+			"templateId":  initialEmailReminderId,
+			"scheduledAt": primitive.NewDateTimeFromTime(now.Add(-1 * time.Second)), // Slightly in the past to ensure immediate pickup
+			"sent":        false,
+		},
+		bson.M{
+			"templateId":  secondEmailReminderId,
+			"scheduledAt": primitive.NewDateTimeFromTime(now.Add(24 * time.Hour)),
+			"sent":        false,
+		},
+		bson.M{
+			"templateId":  finalEmailReminderId,
+			"scheduledAt": primitive.NewDateTimeFromTime(now.Add(72 * time.Hour)),
+			"sent":        false,
+		},
+	}
+
+	logger.StdOut.Printf("Scheduled 3 reminders for %s (immediate, 24h, and 72h)\n", email)
+	logger.StdOut.Printf("First reminder scheduled at: %v (now-1s for immediate pickup)\n", now.Add(-1*time.Second))
+	
+	// Log the reminder details for debugging
+	for i, reminder := range reminders {
+		if r, ok := reminder.(bson.M); ok {
+			logger.StdOut.Printf("  Reminder %d: templateId=%v, scheduledAt=%v, sent=%v\n", 
+				i+1, r["templateId"], r["scheduledAt"], r["sent"])
+		}
+	}
+
+	return reminders
+}
+
+// StartReminderEmailScheduler starts a background worker using a cron scheduler
+// to check for and send scheduled reminder emails every minute
+func StartReminderEmailScheduler(ctx context.Context, eventsCollection *mongo.Collection, usersCollection *mongo.Collection) *cron.Cron {
+	if os.Getenv("LISTMONK_ENABLED") == "false" {
+		logger.StdOut.Println("Listmonk disabled, reminder email scheduler not started")
+		return nil
+	}
+
+	logger.StdOut.Println("Starting reminder email scheduler using robfig/cron...")
+
+	// Create a new cron scheduler
+	c := cron.New()
+
+	// Schedule the job to run every minute
+	_, err := c.AddFunc("* * * * *", func() {
+		sendScheduledReminders(eventsCollection, usersCollection)
+	})
+	if err != nil {
+		logger.StdErr.Printf("Error scheduling reminder email job: %v\n", err)
+		return nil
+	}
+
+	// Start the scheduler
+	c.Start()
+
+	// Stop the scheduler when context is cancelled
+	go func() {
+		<-ctx.Done()
+		logger.StdOut.Println("Reminder email scheduler stopped")
+		c.Stop()
+	}()
+
+	return c
+}
+
+// sendScheduledReminders checks for and sends any due reminder emails
+func sendScheduledReminders(eventsCollection *mongo.Collection, usersCollection *mongo.Collection) {
+	if eventsCollection == nil || usersCollection == nil {
+		logger.StdErr.Println("ERROR: Collections not initialized for sendScheduledReminders")
+		return
+	}
+
+	ctx := context.Background()
+	now := primitive.NewDateTimeFromTime(time.Now())
+
+	logger.StdOut.Printf("Checking for scheduled reminders at %v\n", time.Now())
+	logger.StdOut.Printf("Query filter: looking for reminders with scheduledAt <= %v\n", time.Now())
+	
+	// Debug: Check how many events have remindees at all
+	debugFilter := bson.M{"remindees": bson.M{"$exists": true, "$ne": nil}}
+	debugCount, debugErr := eventsCollection.CountDocuments(ctx, debugFilter)
+	if debugErr == nil {
+		logger.StdOut.Printf("DEBUG: Total events with remindees field: %d\n", debugCount)
+	}
+	
+	// Debug: Check remindees with reminders array
+	debugFilter2 := bson.M{"remindees.reminders": bson.M{"$exists": true}}
+	debugCount2, debugErr2 := eventsCollection.CountDocuments(ctx, debugFilter2)
+	if debugErr2 == nil {
+		logger.StdOut.Printf("DEBUG: Events with remindees.reminders array: %d\n", debugCount2)
+	}
+
+	// Find all events with remindees that have unsent scheduled reminders
+	// Query looks for reminders where sent is false or doesn't exist (for backwards compatibility)
+	filter := bson.M{
+		"remindees": bson.M{
+			"$elemMatch": bson.M{
+				"reminders": bson.M{
+					"$elemMatch": bson.M{
+						"$or": []bson.M{
+							{"sent": false},
+							{"sent": bson.M{"$exists": false}},
+						},
+						"scheduledAt": bson.M{"$lte": now},
+					},
+				},
+			},
+		},
+	}
+
+	cursor, err := eventsCollection.Find(ctx, filter)
+	if err != nil {
+		logger.StdErr.Println("Error finding events with scheduled reminders:", err)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	eventCount := 0
+	reminderCount := 0
+	for cursor.Next(ctx) {
+		eventCount++
+		var event bson.M
+		if err := cursor.Decode(&event); err != nil {
+			logger.StdErr.Println("Error decoding event:", err)
+			continue
+		}
+
+		eventId := event["_id"].(primitive.ObjectID).Hex()
+		eventName := event["name"].(string)
+		
+		logger.StdOut.Printf("DEBUG: Found event %s (%s) with remindees\n", eventId, eventName)
+		
+		// Get owner name by fetching from database
+		ownerName := "Somebody"
+		if ownerId, ok := event["ownerId"].(primitive.ObjectID); ok && !ownerId.IsZero() {
+			var user bson.M
+			err := usersCollection.FindOne(ctx, bson.M{"_id": ownerId}).Decode(&user)
+			if err == nil {
+				if firstName, ok := user["firstName"].(string); ok {
+					ownerName = firstName
+				}
+			} else {
+				logger.StdErr.Printf("Warning: Could not fetch user %s for event %s: %v\n", ownerId.Hex(), eventId, err)
+			}
+		}
+
+		remindees, ok := event["remindees"].(primitive.A)
+		if !ok {
+			logger.StdOut.Printf("DEBUG: Event %s remindees is not a proper array\n", eventId)
+			continue
+		}
+		
+		logger.StdOut.Printf("DEBUG: Event %s has %d remindee(s)\n", eventId, len(remindees))
+
+		// Construct URLs (using a helper function from utils)
+		baseUrl := os.Getenv("BASE_URL")
+		if baseUrl == "" {
+			baseUrl = "http://localhost:3002"
+		}
+		eventUrl := fmt.Sprintf("%s/e/%s", baseUrl, eventId)
+
+		for i, remindeeInterface := range remindees {
+			remindee, ok := remindeeInterface.(bson.M)
+			if !ok {
+				continue
+			}
+
+			email, ok := remindee["email"].(string)
+			if !ok {
+				continue
+			}
+
+			// Check if already responded
+			if responded, ok := remindee["responded"].(*bool); ok && responded != nil && *responded {
+				continue
+			}
+
+			reminders, ok := remindee["reminders"].(primitive.A)
+			if !ok {
+				logger.StdOut.Printf("DEBUG: Remindee %s has no reminders array\n", email)
+				continue
+			}
+			
+			logger.StdOut.Printf("DEBUG: Remindee %s has %d reminder(s)\n", email, len(reminders))
+
+			finishedUrl := fmt.Sprintf("%s/e/%s/responded?email=%s", baseUrl, eventId, email)
+
+			// Check each reminder to see if it should be sent
+			for j, reminderInterface := range reminders {
+				reminder, ok := reminderInterface.(bson.M)
+				if !ok {
+					logger.StdOut.Printf("DEBUG: Reminder %d for %s is not a bson.M\n", j+1, email)
+					continue
+				}
+				
+				// Log the reminder details
+				logger.StdOut.Printf("DEBUG: Reminder %d for %s: templateId=%v, scheduledAt=%v, sent=%v\n",
+					j+1, email, reminder["templateId"], reminder["scheduledAt"], reminder["sent"])
+
+				// Check if reminder has been sent
+				// Handle both bool and *bool types for backwards compatibility
+				var sent bool
+				if sentBool, ok := reminder["sent"].(bool); ok {
+					sent = sentBool
+				} else if sentBoolPtr, ok := reminder["sent"].(*bool); ok && sentBoolPtr != nil {
+					sent = *sentBoolPtr
+				}
+				if sent {
+					continue
+				}
+
+				scheduledAt, ok := reminder["scheduledAt"].(primitive.DateTime)
+				if !ok {
+					continue
+				}
+
+				if scheduledAt <= now {
+					templateId, ok := reminder["templateId"].(int32)
+					if !ok {
+						// Try int64
+						if templateId64, ok := reminder["templateId"].(int64); ok {
+							templateId = int32(templateId64)
+						} else {
+							logger.StdErr.Printf("Warning: Invalid templateId type for reminder in event %s\n", eventId)
+							continue
+						}
+					}
+
+					reminderCount++
+					logger.StdOut.Printf("Processing reminder %d for email %s, event %s (template %d)\n", reminderCount, email, eventName, templateId)
+
+					// Send the email
+					SendEmail(email, int(templateId), bson.M{
+						"ownerName":   ownerName,
+						"eventName":   eventName,
+						"eventUrl":    eventUrl,
+						"finishedUrl": finishedUrl,
+					})
+
+					// Mark as sent
+					update := bson.M{
+						"$set": bson.M{
+							fmt.Sprintf("remindees.%d.reminders.%d.sent", i, j): true,
+						},
+					}
+
+					_, err := eventsCollection.UpdateOne(ctx, bson.M{"_id": event["_id"]}, update)
+					if err != nil {
+						logger.StdErr.Printf("Error marking reminder as sent: %v\n", err)
+					} else {
+						logger.StdOut.Printf("Marked reminder as sent for %s in event %s\n", email, eventName)
+					}
+				}
+			}
+		}
+	}
+	
+	if eventCount == 0 {
+		logger.StdOut.Println("No events found with pending reminders")
+	} else if reminderCount == 0 {
+		logger.StdOut.Printf("Found %d event(s) but no pending reminders to send\n", eventCount)
+	} else {
+		logger.StdOut.Printf("Processed %d reminder(s) from %d event(s)\n", reminderCount, eventCount)
+	}
+}
+
+// CancelScheduledReminders marks all unsent reminders for a remindee as cancelled by setting sent=true
+// This prevents them from being sent in the future
+func CancelScheduledReminders(eventsCollection *mongo.Collection, eventId string, remindeeEmail string) {
+	if eventsCollection == nil {
+		return
+	}
+
+	ctx := context.Background()
+	eventObjectId, err := primitive.ObjectIDFromHex(eventId)
+	if err != nil {
+		logger.StdErr.Println("Error parsing event ID:", err)
+		return
+	}
+
+	// Find the event and update reminders for this specific remindee
+	filter := bson.M{
+		"_id":              eventObjectId,
+		"remindees.email": remindeeEmail,
+	}
+
+	// Mark all unsent reminders as sent (cancelled)
+	update := bson.M{
+		"$set": bson.M{
+			"remindees.$[elem].reminders.$[reminder].sent": true,
+		},
+	}
+
+	arrayFilters := []interface{}{
+		bson.M{"elem.email": remindeeEmail},
+		bson.M{"reminder.sent": false},
+	}
+
+	_, err = eventsCollection.UpdateOne(
+		ctx,
+		filter,
+		update,
+		options.Update().SetArrayFilters(options.ArrayFilters{
+			Filters: arrayFilters,
+		}),
+	)
+
+	if err != nil {
+		logger.StdErr.Printf("Error cancelling scheduled reminders: %v\n", err)
+	}
 }

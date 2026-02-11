@@ -387,10 +387,13 @@ b. **Create a Mailing List**:
    - Name your list (e.g., "Timeful Users")
    - Note the List ID (you'll need this for the `.env` file)
 
-c. **Create Email Templates** (optional):
-   - Go to Campaigns → Templates
-   - Create templates for event reminders and notifications
-   - Note the Template IDs
+c. **Create Email Templates** (required for full functionality):
+   - See [LISTMONK_TEMPLATES.md](LISTMONK_TEMPLATES.md) for detailed instructions and template examples
+   - You need to create 9 email templates:
+     - 6 transactional notification templates (IDs: 8, 9, 10, 11, 13, 14)
+     - 3 reminder email templates (configurable IDs)
+   - Each template includes subject lines, HTML body, and required variables
+   - Test each template after creation to ensure proper rendering
 
 **6. Configure Timeful to Use Listmonk**
 
@@ -398,12 +401,15 @@ Edit your `.env` file and add/update these variables:
 
 ```env
 # Listmonk Configuration
+LISTMONK_ENABLED=true
 LISTMONK_URL=http://listmonk:9000
 LISTMONK_USERNAME=your_admin_username
 LISTMONK_PASSWORD=your_admin_password
 LISTMONK_LIST_ID=1
 
-# Optional: Email Template IDs (if you created custom templates)
+# Required: Reminder Email Template IDs
+# These are the templates for scheduled reminder emails (sent immediately, after 24h, and after 72h)
+# See LISTMONK_TEMPLATES.md for template examples and setup instructions
 LISTMONK_INITIAL_EMAIL_REMINDER_ID=1
 LISTMONK_SECOND_EMAIL_REMINDER_ID=2
 LISTMONK_FINAL_EMAIL_REMINDER_ID=3
@@ -412,11 +418,32 @@ LISTMONK_FINAL_EMAIL_REMINDER_ID=3
 LISTMONK_PORT=9000
 ```
 
+**Note**: The application expects certain template IDs to be hardcoded (8, 9, 10, 11, 13, 14) for transactional emails. See [LISTMONK_TEMPLATES.md](LISTMONK_TEMPLATES.md) for details on how to create templates with these IDs or how to make them configurable.
+
 **7. Restart Services**
 
 ```bash
 docker compose restart backend listmonk
 ```
+
+### Reminder Email Scheduling
+
+Timeful uses a production-ready scheduler (`robfig/cron`) for sending reminder emails instead of Google Cloud Tasks. This means:
+
+- **No external dependencies**: All email scheduling is handled internally using a vetted cron library
+- **Self-hosted friendly**: No need for Google Cloud account or service account keys
+- **Reliable scheduling**: Uses `robfig/cron` (the most popular Go scheduling library) with standard cron syntax
+- **Automatic scheduling**: Reminder emails are sent immediately, after 24 hours, and after 72 hours
+- **Graceful cancellation**: Reminders are automatically cancelled when users respond
+
+The backend service includes a cron-based scheduler that:
+- Runs on standard cron schedule: `* * * * *` (every minute)
+- Checks for pending reminder emails in MongoDB
+- Sends emails at their scheduled time using Listmonk's external subscriber mode
+- Marks emails as sent to prevent duplicates
+- Handles user responses by cancelling remaining reminders
+
+**Note**: If you were previously using Google Cloud Tasks (via `SERVICE_ACCOUNT_KEY_PATH`), you can remove that configuration. The application will fall back to the cron scheduler automatically. Both systems can run simultaneously for backwards compatibility during migration.
 
 ### Managing Listmonk
 

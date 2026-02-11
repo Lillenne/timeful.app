@@ -66,3 +66,13 @@ func Init() func() {
 
 // Restore
 // mongorestore --uri="mongodb://localhost:27017" --drop --db=schej-it ./dump
+
+// GetEventsCollection returns the events collection for use by other packages
+func GetEventsCollection() *mongo.Collection {
+	return EventsCollection
+}
+
+// GetUsersCollection returns the users collection for use by other packages
+func GetUsersCollection() *mongo.Collection {
+	return UsersCollection
+}
