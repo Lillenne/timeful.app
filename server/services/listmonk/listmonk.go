@@ -241,22 +241,14 @@ func ScheduleReminderEmails(email string, ownerName string, eventName string, ev
 		return []interface{}{}
 	}
 
-	// Get email template ids
-	initialEmailReminderId, err := strconv.Atoi(os.Getenv("LISTMONK_INITIAL_EMAIL_REMINDER_ID"))
-	if err != nil {
-		logger.StdErr.Println("Error parsing LISTMONK_INITIAL_EMAIL_REMINDER_ID:", err)
-		return []interface{}{}
-	}
-	secondEmailReminderId, err := strconv.Atoi(os.Getenv("LISTMONK_SECOND_EMAIL_REMINDER_ID"))
-	if err != nil {
-		logger.StdErr.Println("Error parsing LISTMONK_SECOND_EMAIL_REMINDER_ID:", err)
-		return []interface{}{}
-	}
-	finalEmailReminderId, err := strconv.Atoi(os.Getenv("LISTMONK_FINAL_EMAIL_REMINDER_ID"))
-	if err != nil {
-		logger.StdErr.Println("Error parsing LISTMONK_FINAL_EMAIL_REMINDER_ID:", err)
-		return []interface{}{}
-	}
+	// Get email template ids using GetTemplateID helper with defaults
+	// Default template IDs: 1 (initial), 2 (24h reminder), 3 (72h reminder)
+	initialEmailReminderId := GetTemplateID(EnvInitialEmailReminderID, 1)
+	secondEmailReminderId := GetTemplateID(EnvSecondEmailReminderID, 2)
+	finalEmailReminderId := GetTemplateID(EnvFinalEmailReminderID, 3)
+	
+	logger.StdOut.Printf("Using reminder template IDs: initial=%d, 24h=%d, 72h=%d for %s\n", 
+		initialEmailReminderId, secondEmailReminderId, finalEmailReminderId, email)
 
 	logger.StdOut.Printf("Setting up reminders for %s (event: %s)\n", email, eventId)
 
